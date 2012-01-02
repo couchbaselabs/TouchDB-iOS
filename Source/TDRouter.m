@@ -20,9 +20,10 @@
 #import "TDRevision.h"
 #import "TDServer.h"
 #import "TDReplicator.h"
+#import <objc/message.h>
 
 
-NSString* const kTDVersionString =  @"0.1";
+NSString* const kTDVersionString =  @"0.2";
 
 
 @interface TDRouter ()
@@ -87,6 +88,11 @@ NSString* const kTDVersionString =  @"0.1";
     return [self.queries objectForKey: param];
 }
 
+- (BOOL) boolQuery: (NSString*)param {
+    NSString* value = [self.queries objectForKey: param];
+    return value && !$equal(value, @"false") && !$equal(value, @"0");
+}
+
 
 - (TDStatus) openDB {
     if (!_db.exists)
@@ -115,10 +121,15 @@ static NSArray* splitPath( NSString* path ) {
 - (void) start {
     // Refer to: http://wiki.apache.org/couchdb/Complete_HTTP_API_Reference
     
-    NSMutableString* message = [NSMutableString stringWithFormat: @"do_%@", _request.HTTPMethod];
+    // We're going to map the request into a selector based on the method and path.
+    // Accumulate the selector into the string 'message':
+    NSString* method = _request.HTTPMethod;
+    if ($equal(method, @"HEAD"))
+        method = @"GET";
+    NSMutableString* message = [NSMutableString stringWithFormat: @"do_%@", method];
     
     // First interpret the components of the request:
-    _path = [splitPath(_request.URL.path) copy];
+    _path = [splitPath(_request.URL.path) mutableCopy];
     NSUInteger pathLen = _path.count;
     if (pathLen > 0) {
         NSString* dbName = [_path objectAtIndex: 0];
@@ -130,6 +141,7 @@ static NSArray* splitPath( NSString* path ) {
                 _response.status = 400;
                 return;
             }
+            [message appendString: @":"];
         }
     } else {
         [message appendString: @"Root"];
@@ -147,32 +159,64 @@ static NSArray* splitPath( NSString* path ) {
         if (![TDDatabase isValidDocumentID: name]) {
             _response.status = 400;
             return;
-        } else if ([name hasPrefix: @"_"]) {
-            [message appendString: name];
+        } else if (![name hasPrefix: @"_"]) {
+            // Regular document
+            docID = name;
+        } else if ([name isEqualToString: @"_design"]) {
+            // "_design/____" is a document name
+            if (pathLen <= 2) {
+                _response.status = 404;
+                return;
+            }
+            docID = [@"_design/" stringByAppendingString: [_path objectAtIndex: 2]];
+            [_path replaceObjectAtIndex: 1 withObject: docID];
+            [_path removeObjectAtIndex: 2];
+            --pathLen;
+        } else {
+            // Special document name like "_all_docs":
+            [message insertString: name atIndex: message.length-1]; // add to 1st component of msg
             if (pathLen > 2)
                 docID = [[_path subarrayWithRange: NSMakeRange(2, _path.count-2)]
-                                     componentsJoinedByString: @"/"];
-        } else {
-            docID = name;
+                         componentsJoinedByString: @"/"];
         }
-    }
-    
-    if (_db) {
-        [message appendString: @":"];
+
         if (docID)
             [message appendString: @"docID:"];
     }
     
+    NSString* attachmentName = nil;
+    if (docID && pathLen > 2) {
+        // Interpret attachment name:
+        attachmentName = [_path objectAtIndex: 2];
+        if ([attachmentName hasPrefix: @"_"] && [docID hasPrefix: @"_design/"]) {
+            // Design-doc attribute like _info or _view
+            [message replaceOccurrencesOfString: @":docID:" withString: @":designDocID:"
+                                        options:0 range: NSMakeRange(0, message.length)];
+            docID = [docID substringFromIndex: 8];  // strip the "_design/" prefix
+            [message appendString: [attachmentName substringFromIndex: 1]];
+            [message appendString: @":"];
+            attachmentName = pathLen > 3 ? [_path objectAtIndex: 3] : nil;
+        } else {
+            [message appendString: @"attachment:"];
+        }
+    }
+    
     // Send myself a message based on the components:
     SEL sel = NSSelectorFromString(message);
-    if (!sel || ![self respondsToSelector: sel])
+    if (!sel || ![self respondsToSelector: sel]) {
+        Log(@"TDRouter: unknown request type: %@ %@ (mapped to %@)",
+             _request.HTTPMethod, _request.URL.path, message);
         sel = @selector(do_UNKNOWN);
-    TDStatus status = (TDStatus) [self performSelector: sel withObject: _db withObject: docID];
-    
+    }
+    TDStatus status = (TDStatus) objc_msgSend(self, sel, _db, docID, attachmentName);
+
+    // Configure response headers:
     if (_response.body.isValidJSON)
         [_response setValue: @"application/json" ofHeader: @"Content-Type"];
-    //TODO: Add 'Date:' header
-    
+
+    [_response.headers setObject: $sprintf(@"TouchDB %@", kTDVersionString)
+                          forKey: @"Server"];
+
     // If response is ready (nonzero status), tell my client about it:
     if (status > 0) {
         _response.status = status;
@@ -352,9 +396,9 @@ static NSArray* splitPath( NSString* path ) {
     param = [self query: @"skip"];
     if (param)
         options->skip = param.intValue;
-    options->descending = $equal([self query: @"descending"], @"true");
-    options->includeDocs = $equal([self query: @"include_docs"], @"true");
-    options->updateSeq = $equal([self query: @"update_seq"], @"true");
+    options->descending = [self boolQuery: @"descending"];
+    options->includeDocs = [self boolQuery: @"include_docs"];
+    options->updateSeq = [self boolQuery: @"update_seq"];
     return YES;
 }
 
@@ -407,6 +451,9 @@ static NSArray* splitPath( NSString* path ) {
 
 - (void) dbChanged: (NSNotification*)n {
     TDRevision* rev = [n.userInfo objectForKey: @"rev"];
+    
+    if (_changesFilter && !_changesFilter(rev))
+        return;
 
     if (_longpoll) {
         Log(@"TDRouter: Sending longpoll response");
@@ -430,7 +477,16 @@ static NSArray* splitPath( NSString* path ) {
         return 400;
     int since = [[self query: @"since"] intValue];
     
-    TDRevisionList* changes = [db changesSinceSequence: since options: &options];
+    NSString* filterName = [self query: @"filter"];
+    if (filterName) {
+        _changesFilter = [[_db filterNamed: filterName] retain];
+        if (!_changesFilter)
+            return 404;
+    }
+    
+    TDRevisionList* changes = [db changesSinceSequence: since
+                                               options: &options
+                                                filter: _changesFilter];
     if (!changes)
         return 500;
     
@@ -469,8 +525,9 @@ static NSArray* splitPath( NSString* path ) {
 
 
 - (TDStatus) do_GET: (TDDatabase*)db docID: (NSString*)docID {
-    NSString* revID = [self query: @"rev"];  // often nil
-    TDRevision* rev = [db getDocumentWithID: docID revisionID: revID];
+    TDRevision* rev = [db getDocumentWithID: docID
+                                 revisionID: [self query: @"rev"]  // often nil
+                            withAttachments: [self boolQuery: @"attachments"]];
     if (!rev)
         return 404;
     
@@ -479,25 +536,36 @@ static NSArray* splitPath( NSString* path ) {
     if ($equal(eTag, [_request valueForHTTPHeaderField: @"If-None-Match"]))
         return 304;
     
-    if (_path.count <= 2) {
-        _response.body = rev.body;
-        //TODO: Handle ?_revs_info query
-    } else {
-        // Request for an attachment
-        NSString* name = [[_path subarrayWithRange: NSMakeRange(2, _path.count-2)]
-                                                            componentsJoinedByString: @"/"];
-        NSString* type = nil;
-        TDStatus status;
-        NSData* contents = [_db getAttachmentForSequence: rev.sequence
-                                                   named: name
-                                                    type: &type
-                                                  status: &status];
-        if (!contents)
-            return status;
-        if (type)
-            [_response setValue: type ofHeader: @"Content-Type"];
-        _response.body = [TDBody bodyWithJSON: contents];   //FIX: This is a lie, it's not JSON
-    }
+    _response.body = rev.body;
+    //TODO: Handle ?_revs_info query
+    return 200;
+}
+
+
+- (TDStatus) do_GET: (TDDatabase*)db docID: (NSString*)docID attachment: (NSString*)attachment {
+    //OPT: This gets the JSON body too, which is a waste. Could add a 'withBody:' attribute?
+    TDRevision* rev = [db getDocumentWithID: docID
+                                 revisionID: [self query: @"rev"]  // often nil
+                            withAttachments: NO];
+    if (!rev)
+        return 404;
+    
+    // Check for conditional GET:
+    NSString* eTag = [self setResponseEtag: rev];
+    if ($equal(eTag, [_request valueForHTTPHeaderField: @"If-None-Match"]))
+        return 304;
+    
+    NSString* type = nil;
+    TDStatus status;
+    NSData* contents = [_db getAttachmentForSequence: rev.sequence
+                                               named: attachment
+                                                type: &type
+                                              status: &status];
+    if (!contents)
+        return status;
+    if (type)
+        [_response setValue: type ofHeader: @"Content-Type"];
+    _response.body = [TDBody bodyWithJSON: contents];   //FIX: This is a lie, it's not JSON
     return 200;
 }
 
@@ -565,21 +633,25 @@ static NSArray* splitPath( NSString* path ) {
 #pragma mark - DESIGN DOCS:
 
 
-- (TDStatus) do_GET_design: (TDDatabase*)db docID: (NSString*)docID {
-    if (![docID hasPrefix: @"default/_view/"])
+- (TDStatus) do_GET: (TDDatabase*)db designDocID: (NSString*)designDoc view: (NSString*)viewName {
+    viewName = $sprintf(@"%@/%@", designDoc, viewName);
+    TDView* view = [db existingViewNamed: viewName];
+    if (!view)
         return 404;
-    NSString* viewName = [docID substringFromIndex: 14];
     
     TDQueryOptions options;
     if (![self getQueryOptions: &options])
         return 400;
-    
-    TDView* view = [db viewNamed: viewName];
+
     TDStatus status;
-    NSDictionary* result = [view queryWithOptions: &options status: &status];
-    if (!result)
+    NSArray* rows = [view queryWithOptions: &options status: &status];
+    if (!rows)
         return status;
-    _response.bodyObject = result;
+    id updateSeq = options.updateSeq ? $object(view.lastSequenceIndexed) : nil;
+    _response.bodyObject = $dict({@"rows", rows},
+                                 {@"total_rows", $object(rows.count)},
+                                 {@"offset", $object(options.skip)},
+                                 {@"update_seq", updateSeq});
     return 200;
 }
 

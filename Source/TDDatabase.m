@@ -201,6 +201,8 @@
     [_views release];
     [_activeReplicators release];
     [_validations release];
+    [_filters release];
+    [_attachments release];
     [super dealloc];
 }
 
@@ -214,44 +216,28 @@
     return _fmdb.databasePath.lastPathComponent.stringByDeletingPathExtension;
 }
 
-- (int) error {
-    return _fmdb.lastErrorCode;
+
+- (BOOL) beginTransaction {
+    if (![_fmdb executeUpdate: $sprintf(@"SAVEPOINT tdb%d", _transactionLevel + 1)])
+        return NO;
+    ++_transactionLevel;
+    LogTo(TDDatabase, @"Begin transaction (level %d)...", _transactionLevel);
+    return YES;
 }
 
-- (NSString*) errorMessage {
-    return _fmdb.lastErrorMessage;
-}
-
-
-- (void) beginTransaction {
-    if (++_transactionLevel == 1) {
-        LogTo(TDDatabase, @"Begin transaction...");
-        [_fmdb beginTransaction];
-        _transactionFailed = NO;
-    }
-}
-
-- (void) endTransaction {
+- (BOOL) endTransaction: (BOOL)commit {
     Assert(_transactionLevel > 0);
-    if (--_transactionLevel == 0) {
-        if (_transactionFailed) {
-            LogTo(TDDatabase, @"Rolling back failed transaction!");
-            [_fmdb rollback];
-        } else {
-            LogTo(TDDatabase, @"Committing transaction");
-            [_fmdb commit];
-        }
+    if (commit) {
+        LogTo(TDDatabase, @"Commit transaction (level %d)", _transactionLevel);
+    } else {
+        LogTo(TDDatabase, @"CANCEL transaction (level %d)", _transactionLevel);
+        if (![_fmdb executeUpdate: $sprintf(@"ROLLBACK TO tdb%d", _transactionLevel)])
+            return NO;
     }
-    _transactionFailed = NO;
-}
-
-- (BOOL) transactionFailed { return _transactionFailed; }
-
-- (void) setTransactionFailed: (BOOL)failed {
-    Assert(_transactionLevel > 0);
-    Assert(failed, @"Can't clear the transactionFailed property!");
-    LogTo(TDDatabase, @"Current transaction failed, will abort!");
-    _transactionFailed = failed;
+    if (![_fmdb executeUpdate: $sprintf(@"RELEASE tdb%d", _transactionLevel)])
+        return NO;
+    --_transactionLevel;
+    return YES;
 }
 
 
@@ -359,11 +345,10 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 }
 
 
-- (TDRevision*) getDocumentWithID: (NSString*)docID {
-    return [self getDocumentWithID: docID revisionID: nil];
-}
-
-- (TDRevision*) getDocumentWithID: (NSString*)docID revisionID: (NSString*)revID {
+- (TDRevision*) getDocumentWithID: (NSString*)docID
+                       revisionID: (NSString*)revID
+                  withAttachments: (BOOL)withAttachments
+{
     TDRevision* result = nil;
     NSString* sql;
     if (revID)
@@ -381,7 +366,7 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
         NSData* json = [r dataForColumnIndex: 2];
         result = [[[TDRevision alloc] initWithDocID: docID revID: revID deleted: deleted] autorelease];
         result.sequence = [r longLongIntForColumnIndex: 3];
-        [self expandStoredJSON: json intoRevision: result withAttachments: NO];
+        [self expandStoredJSON: json intoRevision: result withAttachments: withAttachments];
     }
     [r close];
     return result;
@@ -389,7 +374,7 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 
 
 - (TDStatus) loadRevisionBody: (TDRevision*)rev
-               andAttachments: (BOOL)withAttachments
+              withAttachments: (BOOL)withAttachments
 {
     if (rev.body)
         return 200;
@@ -508,14 +493,17 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 
 - (TDRevisionList*) changesSinceSequence: (SequenceNumber)lastSequence
                                  options: (const TDQueryOptions*)options
+                                  filter: (TDFilterBlock)filter
 {
     if (!options) options = &kDefaultTDQueryOptions;
+    BOOL includeDocs = options->includeDocs || (filter != NULL);
 
-    FMResultSet* r = [_fmdb executeQuery: @"SELECT sequence, docid, revid, deleted FROM revs, docs "
-                                           "WHERE sequence > ? AND current=1 "
-                                           "AND revs.doc_id = docs.doc_id "
-                                           "ORDER BY sequence LIMIT ?",
-                                          $object(lastSequence), $object(options->limit)];
+    NSString* sql = $sprintf(@"SELECT sequence, docid, revid, deleted %@ FROM revs, docs "
+                             "WHERE sequence > ? AND current=1 "
+                             "AND revs.doc_id = docs.doc_id "
+                             "ORDER BY sequence LIMIT ?",
+                             (includeDocs ? @", json" : @""));
+    FMResultSet* r = [_fmdb executeQuery: sql, $object(lastSequence), $object(options->limit)];
     if (!r)
         return nil;
     TDRevisionList* changes = [[[TDRevisionList alloc] init] autorelease];
@@ -524,7 +512,13 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
                                               revID: [r stringForColumnIndex: 2]
                                             deleted: [r boolForColumnIndex: 3]];
         rev.sequence = [r longLongIntForColumnIndex: 0];
-        [changes addRev: rev];
+        if (includeDocs) {
+            [self expandStoredJSON: [r dataForColumnIndex: 4]
+                      intoRevision: rev
+                   withAttachments: NO];
+        }
+        if (!filter || filter(rev))
+            [changes addRev: rev];
         [rev release];
     }
     [r close];
@@ -532,20 +526,46 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 }
 
 
+- (void) defineFilter: (NSString*)filterName asBlock: (TDFilterBlock)filterBlock {
+    if (!_filters)
+        _filters = [[NSMutableDictionary alloc] init];
+    [_filters setValue: [[filterBlock copy] autorelease] forKey: filterName];
+}
+
+- (TDFilterBlock) filterNamed: (NSString*)filterName {
+    return [_filters objectForKey: filterName];
+}
+
+
 #pragma mark - VIEWS:
+
+
+- (TDView*) registerView: (TDView*)view {
+    if (!view)
+        return nil;
+    if (!_views)
+        _views = [[NSMutableDictionary alloc] init];
+    [_views setObject: view forKey: view.name];
+    return view;
+}
 
 
 - (TDView*) viewNamed: (NSString*)name {
     TDView* view = [_views objectForKey: name];
-    if (!view) {
-        view = [[[TDView alloc] initWithDatabase: self name: name] autorelease];
-        if (!view)
-            return nil;
-        if (!_views)
-            _views = [[NSMutableDictionary alloc] init];
-        [_views setObject: view forKey: name];
-    }
-    return view;
+    if (view)
+        return view;
+    return [self registerView: [[[TDView alloc] initWithDatabase: self name: name] autorelease]];
+}
+
+
+- (TDView*) existingViewNamed: (NSString*)name {
+    TDView* view = [_views objectForKey: name];
+    if (view)
+        return view;
+    view = [[[TDView alloc] initWithDatabase: self name: name] autorelease];
+    if (!view.viewID)
+        return nil;
+    return [self registerView: view];
 }
 
 
@@ -577,13 +597,40 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
     if (options->updateSeq)
         update_seq = self.lastSequence;     // TODO: needs to be atomic with the following SELECT
     
-    NSString* sql = $sprintf(@"SELECT revs.doc_id, docid, revid %@ FROM revs, docs "
+    // Generate the SELECT statement, based on the options:
+    NSMutableString* sql = [NSMutableString stringWithFormat:
+                            @"SELECT revs.doc_id, docid, revid %@ FROM revs, docs "
                               "WHERE current=1 AND deleted=0 "
-                              "AND docs.doc_id = revs.doc_id "
-                              "ORDER BY docid %@, revid DESC LIMIT ? OFFSET ?",
-                             (options->includeDocs ? @", json, sequence" : @""),
-                             (options->descending ? @"DESC" : @"ASC"));
-    FMResultSet* r = [_fmdb executeQuery: sql, $object(options->limit), $object(options->skip)];
+                              "AND docs.doc_id = revs.doc_id",
+                             (options->includeDocs ? @", json, sequence" : @"")];
+    NSMutableArray* args = $marray();
+    
+    id minKey = options->startKey, maxKey = options->endKey;
+    BOOL inclusiveMin = YES, inclusiveMax = options->inclusiveEnd;
+    if (options->descending) {
+        minKey = maxKey;
+        maxKey = options->startKey;
+        inclusiveMin = inclusiveMax;
+        inclusiveMax = YES;
+    }
+    if (minKey) {
+        Assert([minKey isKindOfClass: [NSString class]]);
+        [sql appendString: (inclusiveMin ? @" AND docid >= ?" :  @" AND docid > ?")];
+        [args addObject: minKey];
+    }
+    if (maxKey) {
+        Assert([maxKey isKindOfClass: [NSString class]]);
+        [sql appendString: (inclusiveMax ? @" AND docid <= ?" :  @" AND docid < ?")];
+        [args addObject: maxKey];
+    }
+    
+    [sql appendFormat: @" ORDER BY docid %@, revid DESC LIMIT ? OFFSET ?",
+                       (options->descending ? @"DESC" : @"ASC")];
+    [args addObject: $object(options->limit)];
+    [args addObject: $object(options->skip)];
+    
+    // Now run the database query:
+    FMResultSet* r = [_fmdb executeQuery: sql withArgumentsInArray: args];
     if (!r)
         return nil;
     

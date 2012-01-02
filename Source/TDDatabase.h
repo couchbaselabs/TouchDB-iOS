@@ -26,6 +26,9 @@ extern NSString* const TDDatabaseChangeNotification;
 typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
                                    id<TDValidationContext> context);
 
+/** Filter block, used in changes feeds and replication. */
+typedef BOOL (^TDFilterBlock) (TDRevision* revision);
+
 
 /** A TouchDB database. */
 @interface TDDatabase : NSObject
@@ -35,9 +38,9 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
     FMDatabase *_fmdb;
     BOOL _open;
     NSInteger _transactionLevel;
-    BOOL _transactionFailed;
     NSMutableDictionary* _views;
     NSMutableArray* _validations;
+    NSMutableDictionary* _filters;
     TDBlobStore* _attachments;
     NSMutableArray* _activeReplicators;
 }    
@@ -52,12 +55,15 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
 @property (readonly) NSString* path;
 @property (readonly) NSString* name;
 @property (readonly) BOOL exists;
-@property (readonly) int error;
 
-- (void) beginTransaction;
-- (void) endTransaction;
-@property BOOL transactionFailed;
+/** Begins a database transaction. Transactions can nest. Every -beginTransaction must be balanced by a later -endTransaction:. */
+- (BOOL) beginTransaction;
 
+/** Commits or aborts (rolls back) a transaction.
+    @param commit  If YES, commits; if NO, aborts and rolls back, undoing all changes made since the matching -beginTransaction call, *including* any committed nested transactions. */
+- (BOOL) endTransaction: (BOOL)commit;
+
+/** Compacts the database storage by removing the bodies and attachments of obsolete revisions. */
 - (TDStatus) compact;
 
 // DOCUMENTS:
@@ -65,10 +71,11 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
 @property (readonly) NSUInteger documentCount;
 @property (readonly) SequenceNumber lastSequence;
 
-- (TDRevision*) getDocumentWithID: (NSString*)docID;
-- (TDRevision*) getDocumentWithID: (NSString*)docID revisionID: (NSString*)revID;
+- (TDRevision*) getDocumentWithID: (NSString*)docID 
+                       revisionID: (NSString*)revID
+                  withAttachments: (BOOL)withAttachments;
 - (TDStatus) loadRevisionBody: (TDRevision*)rev
-               andAttachments: (BOOL)andAttachments;
+              withAttachments: (BOOL)andAttachments;
 
 /** Returns an array of TDRevs in reverse chronological order,
     starting with the given revision. */
@@ -83,10 +90,16 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
 - (NSDictionary*) getAllDocs: (const struct TDQueryOptions*)options;
 
 - (TDView*) viewNamed: (NSString*)name;
+- (TDView*) existingViewNamed: (NSString*)name;
 @property (readonly) NSArray* allViews;
 
 - (TDRevisionList*) changesSinceSequence: (SequenceNumber)lastSequence
-                                 options: (const struct TDQueryOptions*)options;
+                                 options: (const struct TDQueryOptions*)options
+                                  filter: (TDFilterBlock)filter;
+
+/** Define a named filter function. These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter. */
+- (void) defineFilter: (NSString*)filterName asBlock: (TDFilterBlock)filterBlock;
+- (TDFilterBlock) filterNamed: (NSString*)filterName;
 
 @end
 

@@ -61,12 +61,16 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-LogTDDatabase YES"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-LogView YES"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-LogSync YES"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-LogSyncVerbose YES"

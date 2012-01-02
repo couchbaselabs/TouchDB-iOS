@@ -27,8 +27,8 @@
 
 
 @interface RootViewController ()
-@property(nonatomic, retain)CouchDatabase *database;
-@property(nonatomic, retain)NSURL* remoteSyncURL;
+@property(nonatomic, strong)CouchDatabase *database;
+@property(nonatomic, strong)NSURL* remoteSyncURL;
 - (void)updateSyncURL;
 - (void)showSyncButton;
 - (void)showSyncStatus;
@@ -58,7 +58,7 @@
                                                             style:UIBarButtonItemStylePlain
                                                            target: self 
                                                            action: @selector(deleteCheckedItems:)];
-    self.navigationItem.leftBarButtonItem = [deleteButton autorelease];
+    self.navigationItem.leftBarButtonItem = deleteButton;
     
     [self showSyncButton];
     
@@ -89,8 +89,6 @@
 
 - (void)dealloc {
     [self forgetSync];
-    [database release];
-    [super dealloc];
 }
 
 
@@ -106,10 +104,11 @@
     
     // Create a CouchDB 'view' containing list items sorted by date
     DemoAppDelegate* delegate = [[UIApplication sharedApplication] delegate];
-    [[delegate.touchDatabase viewNamed: @"byDate"] setMapBlock: ^(NSDictionary* doc, TDMapEmitBlock emit) {
+    [[delegate.touchDatabase viewNamed: @"default/byDate"] 
+     setMapBlock: ^(NSDictionary* doc, TDMapEmitBlock emit) {
         id date = [doc objectForKey: @"created_at"];
         if (date) emit(date, doc);
-    } version: @"1"];
+    } reduceBlock: NULL version: @"1"];
         
     // ...and a validation function requiring parseable dates:
     [delegate.touchDatabase addValidation: ^(TDRevision* newRevision,
@@ -172,7 +171,7 @@
     CouchDocument *doc = [row document];
 
     // Toggle the document's 'checked' property:
-    NSMutableDictionary *docContent = [[doc.properties mutableCopy] autorelease];
+    NSMutableDictionary *docContent = [doc.properties mutableCopy];
     BOOL wasChecked = [[docContent valueForKey:@"check"] boolValue];
     [docContent setObject:[NSNumber numberWithBool:!wasChecked] forKey:@"check"];
 
@@ -216,7 +215,6 @@
                                           cancelButtonTitle: @"Cancel"
                                           otherButtonTitles: @"Remove", nil];
     [alert show];
-    [alert release];
 }
 
 
@@ -285,7 +283,6 @@
     UINavigationController* navController = (UINavigationController*)self.parentViewController;
     ConfigViewController* controller = [[ConfigViewController alloc] init];
     [navController pushViewController: controller animated: YES];
-    [controller release];
 }
 
 
@@ -302,10 +299,10 @@
     
     [self forgetSync];
     if (newRemoteURL) {
-        _pull = [[self.database pullFromDatabaseAtURL: newRemoteURL
-                                              options: kCouchReplicationContinuous] retain];
-        _push = [[self.database pushToDatabaseAtURL: newRemoteURL
-                                            options: kCouchReplicationContinuous] retain];
+        _pull = [self.database pullFromDatabaseAtURL: newRemoteURL
+                                              options: kCouchReplicationContinuous];
+        _push = [self.database pushToDatabaseAtURL: newRemoteURL
+                                            options: kCouchReplicationContinuous];
 
         [_pull addObserver: self forKeyPath: @"completed" options: 0 context: NULL];
         [_push addObserver: self forKeyPath: @"completed" options: 0 context: NULL];
@@ -316,11 +313,9 @@
 - (void) forgetSync {
     [_pull removeObserver: self forKeyPath: @"completed"];
     [_pull stop];
-    [_pull release];
     _pull = nil;
     [_push removeObserver: self forKeyPath: @"completed"];
     [_push stop];
-    [_push release];
     _push = nil;
 }
 
@@ -340,7 +335,7 @@
                                                  style:UIBarButtonItemStylePlain
                                                 target: self 
                                                 action: @selector(configureSync:)];
-        self.navigationItem.rightBarButtonItem = [syncButton autorelease];
+        self.navigationItem.rightBarButtonItem = syncButton;
     }
 }
 
@@ -356,7 +351,7 @@
         }
         UIBarButtonItem* progressItem = [[UIBarButtonItem alloc] initWithCustomView:progress];
         progressItem.enabled = NO;
-        self.navigationItem.rightBarButtonItem = [progressItem autorelease];
+        self.navigationItem.rightBarButtonItem = progressItem;
     }
 }
 

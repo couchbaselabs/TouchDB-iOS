@@ -17,6 +17,7 @@
 #import "DemoQuery.h"
 #import "Test.h"
 #import "TouchDB.h"
+#import <TouchDBListener/TDListener.h>
 #import <CouchCocoa/CouchCocoa.h>
 #import <CouchCocoa/CouchTouchDBServer.h>
 
@@ -30,6 +31,9 @@ int main (int argc, const char * argv[]) {
 }
 
 
+static TDListener* sListener;
+
+
 @implementation DemoAppController
 
 
@@ -37,8 +41,8 @@ int main (int argc, const char * argv[]) {
 
 
 - (void) applicationDidFinishLaunching: (NSNotification*)n {
-    gRESTLogLevel = kRESTLogRequestURLs;
-    gCouchLogLevel = 1;
+    //gRESTLogLevel = kRESTLogRequestURLs;
+    //gCouchLogLevel = 1;
     
     NSDictionary* bundleInfo = [[NSBundle mainBundle] infoDictionary];
     NSString* dbName = [bundleInfo objectForKey: @"DemoDatabase"];
@@ -60,10 +64,10 @@ int main (int argc, const char * argv[]) {
     // Create a CouchDB 'view' containing list items sorted by date
     TDDatabase* tdb = [server.touchServer existingDatabaseNamed: dbName];
     NSAssert(tdb, @"Failed to open or create TouchDB database");
-    [[tdb viewNamed: @"byDate"] setMapBlock: ^(NSDictionary* doc, TDMapEmitBlock emit) {
+    [[tdb viewNamed: @"default/byDate"] setMapBlock: ^(NSDictionary* doc, TDMapEmitBlock emit) {
         id date = [doc objectForKey: @"created_at"];
         if (date) emit(date, doc);
-    } version: @"1"];
+    } reduceBlock: NULL version: @"1"];
         
     // ...and a validation function requiring parseable dates:
     [tdb addValidation: ^(TDRevision* newRevision, id<TDValidationContext>context) {
@@ -75,6 +79,12 @@ int main (int argc, const char * argv[]) {
             return NO;
         }
         return YES;
+    }];
+    
+    // And why not a filter, just to allow some simple testing of filtered _changes.
+    // For example, try curl -i 'http://localhost:8888/demo-shopping/_changes?filter=checked'
+    [tdb defineFilter: @"checked" asBlock: ^BOOL(TDRevision *revision) {
+        return [revision.properties objectForKey: @"check"] == $true;
     }];
 
     
@@ -89,7 +99,12 @@ int main (int argc, const char * argv[]) {
                                              selector: @selector(replicationProgressChanged:)
                                                  name: TDReplicatorProgressChangedNotification
                                                object: nil];
+    
+    // Start a listener socket:
+    sListener = [[TDListener alloc] initWithTDServer: server.touchServer port: 8888];
+    [sListener start];
 }
+
 
 
 #pragma mark - SYNC:
