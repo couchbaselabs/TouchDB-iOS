@@ -26,7 +26,7 @@
 
 const TDQueryOptions kDefaultTDQueryOptions = {
     nil, nil,
-    0, UINT_MAX, 0,
+    0, UINT_MAX, 0, 0,
     NO, NO, NO, YES, NO, NO
 };
 
@@ -225,7 +225,8 @@ static id fromJSON( NSData* json ) {
                     NSData* json = [r dataForColumnIndex: 4];
                     NSDictionary* properties = [_db documentPropertiesFromJSON: json
                                                                          docID: docID revID:revID
-                                                                      sequence: sequence];
+                                                                      sequence: sequence
+                                                                       options: 0];
                     if (properties) {
                         // Call the user-defined map() to emit new key/value pairs from this revision:
                         LogTo(View, @"  call map for sequence=%lld...", sequence);
@@ -265,17 +266,7 @@ static id fromJSON( NSData* json ) {
 {
     if (!options)
         options = &kDefaultTDQueryOptions;
-    
-    if (!options->group) {
-        if (options->reduce && !_reduceBlock) {
-            Warn(@"Cannot use reduce option in view %@ which has no reduce block defined", _name);
-            *outStatus = 400;
-            return nil;
-        }
-        if (options->groupLevel > 0)
-            Warn(@"Setting groupLevel without group makes no sense");
-    }
-    
+
     *outStatus = [self updateIndex];
     if (*outStatus >= 300)
         return nil;
@@ -358,6 +349,13 @@ static id groupKey(id key, unsigned groupLevel) {
     unsigned groupLevel = options->groupLevel;
     bool group = options->group || groupLevel > 0;
     bool reduce = options->reduce || group;
+
+    if (reduce && !_reduceBlock && !group) {
+        Warn(@"Cannot use reduce option in view %@ which has no reduce block defined", _name);
+        *outStatus = 400;
+        return nil;
+    }
+    
     NSMutableArray* rows = $marray();
     NSMutableArray* keysToReduce=nil, *valuesToReduce=nil;
     id lastKey = nil;
@@ -393,7 +391,8 @@ static id groupKey(id key, unsigned groupLevel) {
                     docContents = [_db documentPropertiesFromJSON: [r dataNoCopyForColumnIndex: 4]
                                                             docID: docID
                                                             revID: [r stringForColumnIndex: 3]
-                                                         sequence: [r longLongIntForColumnIndex:5]];
+                                                         sequence: [r longLongIntForColumnIndex:5]
+                                                          options: options->content];
                 }
                 [rows addObject: $dict({@"id",  docID},
                                        {@"key", key},

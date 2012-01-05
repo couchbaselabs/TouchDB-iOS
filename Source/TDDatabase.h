@@ -30,6 +30,29 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
 typedef BOOL (^TDFilterBlock) (TDRevision* revision);
 
 
+/** Options for what metadata to include in document bodies */
+typedef unsigned TDContentOptions;
+enum {
+    kTDIncludeAttachments = 1,
+    kTDIncludeConflicts = 2,
+    kTDIncludeRevsInfo = 4,
+    kTDIncludeLocalSeq = 8
+};
+
+
+/** Options for _changes feed (-changesSinceSequence:). */
+typedef struct TDChangesOptions {
+    unsigned limit;
+    TDContentOptions contentOptions;
+    BOOL includeDocs;
+    BOOL includeConflicts;
+    BOOL sortBySequence;
+} TDChangesOptions;
+
+extern const TDChangesOptions kDefaultTDChangesOptions;
+
+
+
 /** A TouchDB database. */
 @interface TDDatabase : NSObject
 {
@@ -74,11 +97,11 @@ typedef BOOL (^TDFilterBlock) (TDRevision* revision);
 
 - (TDRevision*) getDocumentWithID: (NSString*)docID 
                        revisionID: (NSString*)revID
-                  withAttachments: (BOOL)withAttachments;
+                          options: (TDContentOptions)options;
 - (BOOL) existsDocumentWithID: (NSString*)docID
                    revisionID: (NSString*)revID;
 - (TDStatus) loadRevisionBody: (TDRevision*)rev
-              withAttachments: (BOOL)andAttachments;
+                      options: (TDContentOptions)options;
 
 /** Returns an array of TDRevs in reverse chronological order,
     starting with the given revision. */
@@ -91,13 +114,14 @@ typedef BOOL (^TDFilterBlock) (TDRevision* revision);
 // VIEWS & QUERIES:
 
 - (NSDictionary*) getAllDocs: (const struct TDQueryOptions*)options;
+- (NSDictionary*) getDocsWithIDs: (NSArray*)docIDs options: (const struct TDQueryOptions*)options;
 
 - (TDView*) viewNamed: (NSString*)name;
 - (TDView*) existingViewNamed: (NSString*)name;
 @property (readonly) NSArray* allViews;
 
 - (TDRevisionList*) changesSinceSequence: (SequenceNumber)lastSequence
-                                 options: (const struct TDQueryOptions*)options
+                                 options: (const TDChangesOptions*)options
                                   filter: (TDFilterBlock)filter;
 
 /** Define a named filter function. These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter. */
@@ -126,6 +150,9 @@ typedef BOOL (^TDFilterBlock) (TDRevision* revision);
 - (TDStatus) forceInsert: (TDRevision*)rev
          revisionHistory: (NSArray*)history
                   source: (NSURL*)source;
+
+/** Parses the _revisions dict from a document into an array of revision ID strings */
++ (NSArray*) parseCouchDBRevisionHistory: (NSDictionary*)docProperties;
 
 - (void) addValidation: (TDValidationBlock)validationBlock;
 

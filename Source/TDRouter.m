@@ -85,26 +85,69 @@ NSString* const kTDVersionString =  @"0.2";
 
 
 - (NSString*) query: (NSString*)param {
-    return [self.queries objectForKey: param];
+    return [[self.queries objectForKey: param]
+                    stringByReplacingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
 }
 
 - (BOOL) boolQuery: (NSString*)param {
-    NSString* value = [self.queries objectForKey: param];
+    NSString* value = [self query: param];
     return value && !$equal(value, @"false") && !$equal(value, @"0");
 }
 
 - (int) intQuery: (NSString*)param defaultValue: (int)defaultValue {
-    NSString* value = [self.queries objectForKey: param];
+    NSString* value = [self query: param];
     return value ? value.intValue : defaultValue;
 }
 
 - (id) jsonQuery: (NSString*)param error: (NSError**)outError {
     *outError = nil;
-    NSString* value = [self query: @"startkey"];
+    NSString* value = [self query: param];
     if (!value)
         return nil;
-    return [NSJSONSerialization JSONObjectWithData: [value dataUsingEncoding: NSUTF8StringEncoding]
-                                           options: NSJSONReadingAllowFragments error: outError];
+    id result = [NSJSONSerialization
+                            JSONObjectWithData: [value dataUsingEncoding: NSUTF8StringEncoding]
+                                       options: NSJSONReadingAllowFragments error: outError];
+    if (!result)
+        Warn(@"TDRouter: invalid JSON in query param ?%@=%@", param, value);
+    return result;
+}
+
+
+- (TDContentOptions) contentOptions {
+    TDContentOptions options = 0;
+    if ([self boolQuery: @"attachments"])
+        options |= kTDIncludeAttachments;
+    if ([self boolQuery: @"local_seq"])
+        options |= kTDIncludeLocalSeq;
+    if ([self boolQuery: @"conflicts"])
+        options |= kTDIncludeConflicts;
+    if ([self boolQuery: @"revs_info"])
+        options |= kTDIncludeRevsInfo;
+    return options;
+}
+
+
+- (BOOL) getQueryOptions: (TDQueryOptions*)options {
+    // http://wiki.apache.org/couchdb/HTTP_view_API#Querying_Options
+    *options = kDefaultTDQueryOptions;
+    options->skip = [self intQuery: @"skip" defaultValue: options->skip];
+    options->limit = [self intQuery: @"limit" defaultValue: options->limit];
+    options->groupLevel = [self intQuery: @"group_level" defaultValue: options->groupLevel];
+    options->descending = [self boolQuery: @"descending"];
+    options->includeDocs = [self boolQuery: @"include_docs"];
+    options->updateSeq = [self boolQuery: @"update_seq"];
+    if ([self query: @"inclusive_end"])
+        options->inclusiveEnd = [self boolQuery: @"inclusive_end"];
+    options->reduce = [self boolQuery: @"reduce"];
+    options->group = [self boolQuery: @"group"];
+    options->content = [self contentOptions];
+    NSError* error = nil;
+    options->startKey = [self jsonQuery: @"startkey" error: &error];
+    if (error)
+        return NO;
+    if (!error)
+        options->endKey = [self jsonQuery: @"endkey" error: &error];
+    return !error;
 }
 
 
@@ -431,34 +474,33 @@ static NSArray* splitPath( NSURL* url ) {
 }
 
 
-- (BOOL) getQueryOptions: (TDQueryOptions*)options {
-    // http://wiki.apache.org/couchdb/HTTP_view_API#Querying_Options
-    *options = kDefaultTDQueryOptions;
-    options->skip = [self intQuery: @"skip" defaultValue: options->skip];
-    options->limit = [self intQuery: @"limit" defaultValue: options->limit];
-    options->groupLevel = [self intQuery: @"group_level" defaultValue: options->groupLevel];
-    options->descending = [self boolQuery: @"descending"];
-    options->includeDocs = [self boolQuery: @"include_docs"];
-    options->updateSeq = [self boolQuery: @"update_seq"];
-    if ([self query: @"inclusive_end"])
-        options->inclusiveEnd = [self boolQuery: @"inclusive_end"];
-    options->reduce = [self boolQuery: @"reduce"];
-    options->group = [self boolQuery: @"group"];
-    NSError* error = nil;
-    options->startKey = [self jsonQuery: @"startkey" error: &error];
-    if (error)
-        return NO;
-    if (!error)
-        options->endKey = [self jsonQuery: @"endkey" error: &error];
-    return !error;
-}
-
-
 - (TDStatus) do_GET_all_docs: (TDDatabase*)db {
     TDQueryOptions options;
     if (![self getQueryOptions: &options])
         return 400;
     NSDictionary* result = [db getAllDocs: &options];
+    if (!result)
+        return 500;
+    _response.bodyObject = result;
+    return 200;
+}
+
+
+- (TDStatus) do_POST_all_docs: (TDDatabase*)db {
+    // http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
+    TDQueryOptions options;
+    if (![self getQueryOptions: &options])
+        return 400;
+    
+    NSDictionary* body = [NSJSONSerialization JSONObjectWithData: _request.HTTPBody
+                                                         options: 0 error: nil];
+    if (![body isKindOfClass: [NSDictionary class]])
+        return 400;
+    NSArray* docIDs = [body objectForKey: @"keys"];
+    if (![docIDs isKindOfClass: [NSArray class]])
+        return 400;
+    
+    NSDictionary* result = [db getDocsWithIDs: docIDs options: &options];
     if (!result)
         return 500;
     _response.bodyObject = result;
@@ -481,16 +523,39 @@ static NSArray* splitPath( NSURL* url ) {
 - (NSDictionary*) changeDictForRev: (TDRevision*)rev {
     return $dict({@"seq", $object(rev.sequence)},
                  {@"id",  rev.docID},
-                 {@"changes", $array($dict({@"rev", rev.revID}))},
-                 {@"deleted", rev.deleted ? $true : nil});
+                 {@"changes", $marray($dict({@"rev", rev.revID}))},
+                 {@"deleted", rev.deleted ? $true : nil},
+                 {@"doc", (_changesIncludeDocs ? rev.properties : nil)});
 }
-
 
 - (NSDictionary*) responseBodyForChanges: (NSArray*)changes since: (UInt64)since {
     NSArray* results = [changes my_map: ^(id rev) {return [self changeDictForRev: rev];}];
     if (changes.count > 0)
         since = [[changes lastObject] sequence];
     return $dict({@"results", results}, {@"last_seq", $object(since)});
+}
+
+
+- (NSDictionary*) responseBodyForChangesWithConflicts: (NSArray*)changes since: (UInt64)since {
+    // Assumes the changes are grouped by docID so that conflicts will be adjacent.
+    NSMutableArray* entries = [NSMutableArray arrayWithCapacity: changes.count];
+    NSString* lastDocID = nil;
+    NSDictionary* lastEntry = nil;
+    for (TDRevision* rev in changes) {
+        NSString* docID = rev.docID;
+        if ($equal(docID, lastDocID)) {
+            [[lastEntry objectForKey: @"changes"] addObject: $dict({@"rev", rev.revID})];
+        } else {
+            lastEntry = [self changeDictForRev: rev];
+            [entries addObject: lastEntry];
+            lastDocID = docID;
+        }
+    }
+    // After collecting revisions, sort by sequence:
+    [entries sortUsingComparator: ^NSComparisonResult(id e1, id e2) {
+        return [[e1 objectForKey: @"seq"] longLongValue] - [[e2 objectForKey: @"seq"] longLongValue];
+    }];
+    return $dict({@"results", entries}, {@"last_seq", $object(since)});
 }
 
 
@@ -527,9 +592,13 @@ static NSArray* splitPath( NSURL* url ) {
 
 - (TDStatus) do_GET_changes: (TDDatabase*)db {
     // http://wiki.apache.org/couchdb/HTTP_database_API#Changes
-    TDQueryOptions options;
-    if (![self getQueryOptions: &options])
-        return 400;
+    TDChangesOptions options = kDefaultTDChangesOptions;
+    _changesIncludeDocs = [self boolQuery: @"include_docs"];
+    options.includeDocs = _changesIncludeDocs;
+    options.includeConflicts = $equal([self query: @"style"], @"all_docs");
+    options.contentOptions = [self contentOptions];
+    options.sortBySequence = !options.includeConflicts;
+    options.limit = [self intQuery: @"limit" defaultValue: options.limit];
     int since = [[self query: @"since"] intValue];
     
     NSString* filterName = [self query: @"filter"];
@@ -563,7 +632,11 @@ static NSArray* splitPath( NSURL* url ) {
         _waiting = YES;
         return 0;
     } else {
-        _response.bodyObject = [self responseBodyForChanges: changes.allRevisions since: since];
+        if (options.includeConflicts)
+            _response.bodyObject = [self responseBodyForChangesWithConflicts: changes.allRevisions
+                                                                       since: since];
+        else
+            _response.bodyObject = [self responseBodyForChanges: changes.allRevisions since: since];
         return 200;
     }
 }
@@ -583,7 +656,7 @@ static NSArray* splitPath( NSURL* url ) {
     // http://wiki.apache.org/couchdb/HTTP_Document_API#GET
     TDRevision* rev = [db getDocumentWithID: docID
                                  revisionID: [self query: @"rev"]  // often nil
-                            withAttachments: [self boolQuery: @"attachments"]];
+                                    options: [self contentOptions]];
     if (!rev)
         return 404;
     
@@ -592,34 +665,7 @@ static NSArray* splitPath( NSURL* url ) {
     if ($equal(eTag, [_request valueForHTTPHeaderField: @"If-None-Match"]))
         return 304;
     
-    NSMutableDictionary* extra = $mdict();
-    
-    if ([self boolQuery: @"local_seq"])
-        [extra setObject: $object(rev.sequence) forKey: @"_local_seq"];
-
-    if ([self boolQuery: @"revs_info"]) {
-        NSArray* info = [_db getRevisionHistory: rev];
-        if (!info)
-            return 500;
-        info = [info my_map: ^id(id rev) {
-            NSString* status = @"available";
-            if ([rev deleted])
-                status = @"deleted";
-            // TODO: Detect missing revisions, set status="missing"
-            return $dict({@"rev", [rev revID]}, {@"status", status});
-        }];
-        
-        [extra setObject: info forKey: @"_revs_info"];
-    }
-    
-    TDBody* responseBody = rev.body;
-    if (extra.count) {
-        NSMutableDictionary* props = [responseBody.properties mutableCopy];
-        [props addEntriesFromDictionary: extra];
-        responseBody = [TDBody bodyWithProperties: props];
-        // OPT: More efficient to use appendDictToJSON, like TDDocument
-    }
-    _response.body = responseBody;
+    _response.body = rev.body;
     return 200;
 }
 
@@ -628,7 +674,7 @@ static NSArray* splitPath( NSURL* url ) {
     //OPT: This gets the JSON body too, which is a waste. Could add a 'withBody:' attribute?
     TDRevision* rev = [db getDocumentWithID: docID
                                  revisionID: [self query: @"rev"]  // often nil
-                            withAttachments: NO];
+                                    options: 0];
     if (!rev)
         return 404;
     
@@ -660,7 +706,7 @@ static NSArray* splitPath( NSURL* url ) {
     BOOL posting = (docID == nil);
     TDBody* body = json ? [TDBody bodyWithJSON: json] : nil;
     
-    NSString* revID;
+    NSString* prevRevID;
     if (!deleting) {
         deleting = $castIf(NSNumber, [body propertyForKey: @"_deleted"]).boolValue;
         if (!docID) {
@@ -673,16 +719,16 @@ static NSArray* splitPath( NSURL* url ) {
             }
         }
         // PUT's revision ID comes from the JSON body.
-        revID = [body propertyForKey: @"_rev"];
+        prevRevID = [body propertyForKey: @"_rev"];
     } else {
         // DELETE's revision ID can come either from the ?rev= query param or an If-Match header.
-        revID = [self query: @"rev"];
-        if (!revID) {
+        prevRevID = [self query: @"rev"];
+        if (!prevRevID) {
             NSString* ifMatch = [_request valueForHTTPHeaderField: @"If-Match"];
             if (ifMatch) {
                 // Value of If-Match is an ETag, so have to trim the quotes around it:
                 if (ifMatch.length > 2 && [ifMatch hasPrefix: @"\""] && [ifMatch hasSuffix: @"\""])
-                    revID = [ifMatch substringWithRange: NSMakeRange(1, ifMatch.length-2)];
+                    prevRevID = [ifMatch substringWithRange: NSMakeRange(1, ifMatch.length-2)];
                 else
                     return 400;
             }
@@ -696,7 +742,7 @@ static NSArray* splitPath( NSURL* url ) {
     rev.body = body;
     
     TDStatus status;
-    rev = [db putRevision: rev prevRevisionID: revID status: &status];
+    rev = [db putRevision: rev prevRevisionID: prevRevID status: &status];
     if (status < 300) {
         [self setResponseEtag: rev];
         if (!deleting) {
@@ -717,7 +763,21 @@ static NSArray* splitPath( NSURL* url ) {
     NSData* json = _request.HTTPBody;
     if (!json)
         return 400;
-    return [self update: db docID: docID json: json deleting: NO];
+    
+    if (![self query: @"new_edits"] || [self boolQuery: @"new_edits"]) {
+        // Regular PUT:
+        return [self update: db docID: docID json: json deleting: NO];
+    } else {
+        // PUT with new_edits=false -- forcible insertion of existing revision:
+        TDBody* body =  [TDBody bodyWithJSON: json];
+        TDRevision* rev = [[[TDRevision alloc] initWithBody: body] autorelease];
+        if (!rev || !$equal(rev.docID, docID) || !rev.revID)
+            return 400;
+        NSArray* history = [TDDatabase parseCouchDBRevisionHistory: body.properties];
+        if (!history)
+            history = $array(rev.revID);
+        return [_db forceInsert: rev revisionHistory: history source: nil];
+    }
 }
 
 
