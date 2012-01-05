@@ -811,6 +811,41 @@ static NSArray* splitPath( NSURL* url ) {
     return 200;
 }
 
+- (TDStatus) do_POST: (TDDatabase*)db designDocID: (NSString*)designDoc view: (NSString*)viewName {
+    viewName = $sprintf(@"%@/%@", designDoc, viewName);
+    TDView* view = [db existingViewNamed: viewName];
+    if (!view)
+        return 404;
+    
+    TDQueryOptions options;
+    if (![self getQueryOptions: &options])
+        return 400;
+    
+    
+    NSDictionary* body = [NSJSONSerialization JSONObjectWithData: _request.HTTPBody
+                                                         options: 0 error: nil];
+    if (![body isKindOfClass: [NSDictionary class]])
+        return 400;
+    NSArray* docIDs = [body objectForKey: @"keys"];
+    if (![docIDs isKindOfClass: [NSArray class]])
+        return 400;
+    
+    options.keys = docIDs;
+    
+    
+    
+    TDStatus status;
+    NSArray* rows = [view queryWithOptions: &options status: &status];
+    if (!rows)
+        return status;
+    id updateSeq = options.updateSeq ? $object(view.lastSequenceIndexed) : nil;
+    _response.bodyObject = $dict({@"rows", rows},
+                                 {@"total_rows", $object(rows.count)},
+                                 {@"offset", $object(options.skip)},
+                                 {@"update_seq", updateSeq});
+    return 200;
+}
+
 
 - (TDStatus) do_POST_temp_view: (TDDatabase*)db {
     if (![[_request valueForHTTPHeaderField: @"Content-Type"] hasPrefix: @"application/json"])
