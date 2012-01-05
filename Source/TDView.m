@@ -277,6 +277,24 @@ static id fromJSON( NSData* json ) {
     [sql appendString: @" FROM maps, revs, docs WHERE maps.view_id=?"];
     NSMutableArray* args = $marray($object(_viewID));
 
+    id keys = options->keys;
+    
+    if ([keys isKindOfClass:[NSArray class]]) {
+        
+        [sql appendString:@" AND ("];
+        
+        for (NSString * key in (NSArray *)keys) {
+            
+            [sql appendString:@"key = ?"];
+            [args addObject: toJSONString(key)];
+            
+            if (key != [keys lastObject])
+                [sql appendString:@" OR "];
+        }
+        
+        [sql appendString:@")"];
+    }
+    
     id minKey = options->startKey, maxKey = options->endKey;
     BOOL inclusiveMin = YES, inclusiveMax = options->inclusiveEnd;
     if (options->descending) {

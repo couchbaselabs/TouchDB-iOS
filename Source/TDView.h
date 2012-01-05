@@ -39,6 +39,7 @@ typedef struct TDQueryOptions {
     BOOL inclusiveEnd;
     BOOL reduce;
     BOOL group;
+    __unsafe_unretained id keys;
 } TDQueryOptions;
 
 extern const TDQueryOptions kDefaultTDQueryOptions;
