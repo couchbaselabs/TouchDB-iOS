@@ -316,9 +316,13 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
     
     // Get more optional stuff to put in the properties:
     //OPT: This probably ends up making redundant SQL queries if multiple options are enabled.
-    id localSeq=nil, revsInfo=nil, conflicts=nil;
+    id localSeq=nil, revs=nil, revsInfo=nil, conflicts=nil;
     if (options & kTDIncludeLocalSeq)
         localSeq = $object(sequence);
+    
+    if (options & kTDIncludeRevs) {
+        revs = [self getRevisionHistoryDict: rev];
+    }
     
     if (options & kTDIncludeRevsInfo) {
         revsInfo = [[self getRevisionHistory: rev] my_map: ^id(id rev) {
@@ -344,6 +348,7 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
                  {@"_deleted", (rev.deleted ? $true : nil)},
                  {@"_attachments", attachmentsDict},
                  {@"_local_seq", localSeq},
+                 {@"_revisions", revs},
                  {@"_revs_info", revsInfo},
                  {@"_conflicts", conflicts});
 }
@@ -549,6 +554,52 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 }
 
 
+// Splits a revision ID into its generation number and opaque suffix string
+static BOOL parseRevID( NSString* revID, int* outNum, NSString** outSuffix) {
+    NSScanner* scanner = [[NSScanner alloc] initWithString: revID];
+    scanner.charactersToBeSkipped = nil;
+    BOOL parsed = [scanner scanInt: outNum] && [scanner scanString: @"-" intoString: nil];
+    *outSuffix = [revID substringFromIndex: scanner.scanLocation];
+    [scanner release];
+    return parsed && *outNum > 0 && (*outSuffix).length > 0;
+}
+
+static NSDictionary* makeRevisionHistoryDict(NSArray* history) {
+    if (!history)
+        return nil;
+    
+    // Try to extract descending numeric prefixes:
+    NSMutableArray* suffixes = $marray();
+    id start = nil;
+    int lastRevNo = -1;
+    for (TDRevision* rev in history) {
+        int revNo;
+        NSString* suffix;
+        if (parseRevID(rev.revID, &revNo, &suffix)) {
+            if (!start)
+                start = $object(revNo);
+            else if (revNo != lastRevNo - 1) {
+                start = nil;
+                break;
+            }
+            lastRevNo = revNo;
+            [suffixes addObject: suffix];
+        } else {
+            start = nil;
+            break;
+        }
+    }
+    
+    NSArray* revIDs = start ? suffixes : [history my_map: ^(id rev) {return [rev revID];}];
+    return $dict({@"ids", revIDs}, {@"start", start});
+}
+
+- (NSDictionary*) getRevisionHistoryDict: (TDRevision*)rev {
+    return makeRevisionHistoryDict([self getRevisionHistory: rev]);
+}
+
+
+
 const TDChangesOptions kDefaultTDChangesOptions = {UINT_MAX, 0, NO, NO, YES};
 
 
@@ -571,26 +622,28 @@ const TDChangesOptions kDefaultTDChangesOptions = {UINT_MAX, 0, NO, NO, YES};
     TDRevisionList* changes = [[[TDRevisionList alloc] init] autorelease];
     int64_t lastDocID = 0;
     while ([r next]) {
-        if (!options->includeConflicts) {
-            // Only count the first rev for a given doc (the rest will be losing conflicts):
-            int64_t docNumericID = [r longLongIntForColumnIndex: 1];
-            if (docNumericID == lastDocID)
-                continue;
-            lastDocID = docNumericID;
-        }
+        @autoreleasepool {
+            if (!options->includeConflicts) {
+                // Only count the first rev for a given doc (the rest will be losing conflicts):
+                int64_t docNumericID = [r longLongIntForColumnIndex: 1];
+                if (docNumericID == lastDocID)
+                    continue;
+                lastDocID = docNumericID;
+            }
 
-        TDRevision* rev = [[TDRevision alloc] initWithDocID: [r stringForColumnIndex: 2]
-                                              revID: [r stringForColumnIndex: 3]
-                                            deleted: [r boolForColumnIndex: 4]];
-        rev.sequence = [r longLongIntForColumnIndex: 0];
-        if (includeDocs) {
-            [self expandStoredJSON: [r dataForColumnIndex: 5]
-                      intoRevision: rev
-                           options: options->contentOptions];
+            TDRevision* rev = [[TDRevision alloc] initWithDocID: [r stringForColumnIndex: 2]
+                                                  revID: [r stringForColumnIndex: 3]
+                                                deleted: [r boolForColumnIndex: 4]];
+            rev.sequence = [r longLongIntForColumnIndex: 0];
+            if (includeDocs) {
+                [self expandStoredJSON: [r dataForColumnIndex: 5]
+                          intoRevision: rev
+                               options: options->contentOptions];
+            }
+            if (!filter || filter(rev))
+                [changes addRev: rev];
+            [rev release];
         }
-        if (!filter || filter(rev))
-            [changes addRev: rev];
-        [rev release];
     }
     [r close];
     
@@ -759,3 +812,49 @@ const TDChangesOptions kDefaultTDChangesOptions = {UINT_MAX, 0, NO, NO, YES};
 
 
 @end
+
+
+
+
+#if DEBUG
+
+static TDRevision* mkrev(NSString* revID) {
+    return [[[TDRevision alloc] initWithDocID: @"docid" revID: revID deleted: NO] autorelease];
+}
+
+TestCase(TDDatabase_ParseRevID) {
+    RequireTestCase(TDDatabase);
+    int num;
+    NSString* suffix;
+    CAssert(parseRevID(@"1-utiopturoewpt", &num, &suffix));
+    CAssertEq(num, 1);
+    CAssertEqual(suffix, @"utiopturoewpt");
+    
+    CAssert(parseRevID(@"321-fdjfdsj-e", &num, &suffix));
+    CAssertEq(num, 321);
+    CAssertEqual(suffix, @"fdjfdsj-e");
+    
+    CAssert(!parseRevID(@"0-fdjfdsj-e", &num, &suffix));
+    CAssert(!parseRevID(@"-4-fdjfdsj-e", &num, &suffix));
+    CAssert(!parseRevID(@"5_fdjfdsj-e", &num, &suffix));
+    CAssert(!parseRevID(@" 5-fdjfdsj-e", &num, &suffix));
+    CAssert(!parseRevID(@"7 -foo", &num, &suffix));
+    CAssert(!parseRevID(@"7-", &num, &suffix));
+    CAssert(!parseRevID(@"7", &num, &suffix));
+    CAssert(!parseRevID(@"eiuwtiu", &num, &suffix));
+    CAssert(!parseRevID(@"", &num, &suffix));
+}
+
+TestCase(TDDatabase_MakeRevisionHistoryDict) {
+    NSArray* revs = $array(mkrev(@"4-jkl"), mkrev(@"3-ghi"), mkrev(@"2-def"));
+    CAssertEqual(makeRevisionHistoryDict(revs), $dict({@"ids", $array(@"jkl", @"ghi", @"def")},
+                                                    {@"start", $object(4)}));
+    
+    revs = $array(mkrev(@"4-jkl"), mkrev(@"2-def"));
+    CAssertEqual(makeRevisionHistoryDict(revs), $dict({@"ids", $array(@"4-jkl", @"2-def")}));
+    
+    revs = $array(mkrev(@"12345"), mkrev(@"6789"));
+    CAssertEqual(makeRevisionHistoryDict(revs), $dict({@"ids", $array(@"12345", @"6789")}));
+}
+
+#endif

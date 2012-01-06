@@ -35,8 +35,9 @@ typedef unsigned TDContentOptions;
 enum {
     kTDIncludeAttachments = 1,
     kTDIncludeConflicts = 2,
-    kTDIncludeRevsInfo = 4,
-    kTDIncludeLocalSeq = 8
+    kTDIncludeRevs = 4,
+    kTDIncludeRevsInfo = 8,
+    kTDIncludeLocalSeq = 16
 };
 
 
@@ -63,7 +64,7 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
     BOOL _open;
     NSInteger _transactionLevel;
     NSMutableDictionary* _views;
-    NSMutableArray* _validations;
+    NSMutableDictionary* _validations;
     NSMutableDictionary* _filters;
     TDBlobStore* _attachments;
     NSMutableArray* _activeReplicators;
@@ -107,6 +108,9 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
     starting with the given revision. */
 - (NSArray*) getRevisionHistory: (TDRevision*)rev;
 
+/** Returns the revision history as a _revisions dictionary, as returned by the REST API's ?revs=true option. */
+- (NSDictionary*) getRevisionHistoryDict: (TDRevision*)rev;
+
 /** Returns all the known revisions (or all current/conflicting revisions) of a document. */
 - (TDRevisionList*) getAllRevisionsOfDocumentID: (NSString*)docID
                                     onlyCurrent: (BOOL)onlyCurrent;
@@ -124,7 +128,7 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
                                  options: (const TDChangesOptions*)options
                                   filter: (TDFilterBlock)filter;
 
-/** Define a named filter function. These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter. */
+/** Define or clear a named filter function. These aren't used directly by TDDatabase, but they're looked up by TDRouter when a _changes request has a ?filter parameter. */
 - (void) defineFilter: (NSString*)filterName asBlock: (TDFilterBlock)filterBlock;
 - (TDFilterBlock) filterNamed: (NSString*)filterName;
 
@@ -140,8 +144,14 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
 /** Stores a new (or initial) revision of a document. This is what's invoked by a PUT or POST. As with those, the previous revision ID must be supplied when necessary and the call will fail if it doesn't match.
     @param revision  The revision to add. If the docID is nil, a new UUID will be assigned. Its revID must be nil. It must have a JSON body.
     @param prevRevID  The ID of the revision to replace (same as the "?rev=" parameter to a PUT), or nil if this is a new document.
+    @param allowConflict  If NO, an error status 409 will be returned if the insertion would create a conflict, i.e. if the previous revision already has a child.
     @param status  On return, an HTTP status code indicating success or failure.
     @return  A new TDRevision with the docID, revID and sequence filled in (but no body). */
+- (TDRevision*) putRevision: (TDRevision*)revision
+             prevRevisionID: (NSString*)prevRevID
+              allowConflict: (BOOL)allowConflict
+                     status: (TDStatus*)outStatus;
+
 - (TDRevision*) putRevision: (TDRevision*)revision
              prevRevisionID: (NSString*)prevRevID
                      status: (TDStatus*)outStatus;
@@ -154,7 +164,9 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
 /** Parses the _revisions dict from a document into an array of revision ID strings */
 + (NSArray*) parseCouchDBRevisionHistory: (NSDictionary*)docProperties;
 
-- (void) addValidation: (TDValidationBlock)validationBlock;
+/** Define or clear a named document validation function.  */
+- (void) defineValidation: (NSString*)validationName asBlock: (TDValidationBlock)validationBlock;
+- (TDValidationBlock) validationNamed: (NSString*)validationName;
 
 @end
 
