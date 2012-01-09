@@ -79,8 +79,16 @@
 
 
 - (BOOL)expectsRequestBodyFromMethod:(NSString *)method atPath:(NSString *)path {
-	return $equal(method, @"POST") || $equal(method, @"PUT")
-		|| [super expectsRequestBodyFromMethod:method atPath:path];
+    BOOL putWithBody = NO;
+    if ($equal(method, @"PUT")) {
+        // Allow PUT to /newdbname without a request body as per
+        // http://wiki.apache.org/couchdb/HTTP_database_API#PUT_.28Create_New_Database.29
+        // superclass implementation returns YES
+        // NOTE: initial empty string:  "/newdbname" -> ("", "newdbname")
+        NSArray * comp = [path componentsSeparatedByString:@"/"];
+        return [comp count] != 2; 
+    }
+    $equal(method, @"POST") || [super expectsRequestBodyFromMethod:method atPath:path];
 }
 
 - (void)prepareForBodyWithSize:(UInt64)contentLength {
