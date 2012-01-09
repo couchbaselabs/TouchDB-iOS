@@ -80,6 +80,7 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
 @property (readonly) NSString* path;
 @property (readonly, copy) NSString* name;
 @property (readonly) BOOL exists;
+@property (readonly) UInt64 totalDataSize;
 
 /** Begins a database transaction. Transactions can nest. Every -beginTransaction must be balanced by a later -endTransaction:. */
 - (BOOL) beginTransaction;
@@ -198,6 +199,14 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
 /** Deletes obsolete attachments from the database and blob store. */
 - (TDStatus) garbageCollectAttachments;
 
+/** Updates or deletes an attachment, creating a new document revision in the process.
+    Used by the PUT / DELETE methods called on attachment URLs. */
+- (TDRevision*) updateAttachment: (NSString*)filename
+                            body: (NSData*)body
+                            type: (NSString*)contentType
+                         ofDocID: (NSString*)docID
+                           revID: (NSString*)oldRevID
+                          status: (TDStatus*)outStatus;
 @end
 
 
