@@ -38,7 +38,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 @implementation TDPuller
 
 
-@synthesize filterName=_filterName;
+@synthesize filterName=_filterName,queryParameters=_queryParameters;
 
 
 - (void)dealloc {
@@ -47,6 +47,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     [_revsToPull release];
     [_revsToInsert release];
     [_filterName release];
+    [_queryParameters release];
     [super dealloc];
 }
 
@@ -72,6 +73,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
                                           lastSequence: [_lastSequence intValue]
                                                 client: self];
     _changeTracker.filterName = _filterName;
+    _changeTracker.queryParameters = _queryParameters;
     [_changeTracker start];
     [self asyncTaskStarted];
 }

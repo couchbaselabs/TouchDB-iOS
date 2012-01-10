@@ -23,7 +23,7 @@
 @implementation TDChangeTracker
 
 @synthesize lastSequenceNumber=_lastSequenceNumber, databaseURL=_databaseURL, mode=_mode;
-@synthesize client=_client, filterName=_filterName;
+@synthesize client=_client, filterName=_filterName, queryParameters=_queryParameters;
 
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
                      mode: (TDChangeTrackerMode)mode
@@ -69,6 +69,12 @@
                                     _lastSequenceNumber];
     if (_filterName)
         [path appendFormat: @"&filter=%@", _filterName];
+    if (_queryParameters) {
+        [_queryParameters enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop){
+            [path appendFormat: @"&%@=%@", key, obj];
+        }];
+    }
+
     return path;
 }
 
