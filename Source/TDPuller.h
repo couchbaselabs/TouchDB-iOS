@@ -20,10 +20,10 @@
     NSUInteger _httpConnectionCount;
     TDBatcher* _revsToInsert;
     NSString* _filterName;
-    NSDictionary* _queryParameters;
+    NSDictionary* _filterParameters;
 }
 
 @property (copy) NSString* filterName;
-@property (copy) NSDictionary* queryParameters;
+@property (copy) NSDictionary* filterParameters;
 
 @end

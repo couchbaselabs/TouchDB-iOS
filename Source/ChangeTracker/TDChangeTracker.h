@@ -41,7 +41,7 @@ typedef enum TDChangeTrackerMode {
     TDChangeTrackerMode _mode;
     NSUInteger _lastSequenceNumber;
     NSString* _filterName;
-    NSDictionary* _queryParameters;
+    NSDictionary* _filterParameters;
 }
 
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
@@ -56,7 +56,7 @@ typedef enum TDChangeTrackerMode {
 @property (nonatomic, assign) id<TDChangeTrackerClient> client;
 
 @property (copy) NSString* filterName;
-@property (copy) NSDictionary* queryParameters;
+@property (copy) NSDictionary* filterParameters;
 
 - (BOOL) start;
 - (void) stop;

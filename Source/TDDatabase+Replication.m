@@ -41,14 +41,14 @@
 - (TDReplicator*) replicateWithRemoteURL: (NSURL*)remote
                                     push: (BOOL)push
                               continuous: (BOOL)continuous {
-    return [self replicateWithRemoteURL: remote push: push continuous: continuous filter: nil queryParams: nil];
+    return [self replicateWithRemoteURL: remote push: push continuous: continuous filter: nil filterParameters: nil];
 }
 
 - (TDReplicator*) replicateWithRemoteURL: (NSURL*)remote
                                     push: (BOOL)push
                               continuous: (BOOL)continuous
                                   filter: (NSString*)filterName
-                             queryParams: (NSDictionary*)query_params {
+                        filterParameters: (NSDictionary*)filterParams {
     TDReplicator* repl = [self activeReplicatorWithRemoteURL: remote push: push];
     if (repl)
         return repl;
@@ -57,8 +57,10 @@
                                        push: push
                                  continuous: continuous];
 
-    [(TDPuller *)repl setFilterName:filterName];
-    [(TDPuller *)repl setQueryParameters:query_params];
+    if (!push) {
+        [(TDPuller *)repl setFilterName: filterName];
+        [(TDPuller *)repl setFilterParameters: filterParams];
+    }
 
     if (!repl)
         return nil;
