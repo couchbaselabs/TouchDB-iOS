@@ -219,6 +219,11 @@ extern const TDChangesOptions kDefaultTDChangesOptions;
 - (TDReplicator*) replicateWithRemoteURL: (NSURL*)remote
                                     push: (BOOL)push
                               continuous: (BOOL)continuous;
+- (TDReplicator*) replicateWithRemoteURL: (NSURL*)remote
+                                    push: (BOOL)push
+                              continuous: (BOOL)continuous
+                                  filter: (NSString*)filterName
+                        filterParameters: (NSDictionary*)filterParams;
 
 - (BOOL) findMissingRevisions: (TDRevisionList*)revs;
 @end
