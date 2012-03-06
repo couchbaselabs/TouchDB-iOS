@@ -11,7 +11,7 @@
 
 
 /** Validation block, used to approve revisions being added to the database. */
-typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
+typedef BOOL (^TDValidationBlock) (NSDictionary* newRevision,
                                    id<TDValidationContext> context);
 
 
@@ -50,8 +50,8 @@ typedef BOOL (^TDValidationBlock) (TDRevision* newRevision,
 
 /** Context passed into a TDValidationBlock. */
 @protocol TDValidationContext <NSObject>
-/** The contents of the current revision of the document, or nil if this is a new document. */
-@property (readonly) TDRevision* currentRevision;
+/** The current revision of the document, or nil if this is a new document. */
+@property (readonly) NSDictionary* currentRevision;
 
 /** The type of HTTP status to report, if the validate block returns NO.
     The default value is 403 ("Forbidden"). */

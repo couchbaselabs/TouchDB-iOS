@@ -35,7 +35,7 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
     NSString* _errorMessage;
 }
 - (id) initWithDatabase: (TDDatabase*)db revision: (TDRevision*)currentRevision;
-@property (readonly) TDRevision* currentRevision;
+@property (readonly) NSDictionary* currentRevision;
 @property TDStatus errorType;
 @property (copy) NSString* errorMessage;
 @end
@@ -484,15 +484,26 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
 
 
 - (TDStatus) validateRevision: (TDRevision*)newRev previousRevision: (TDRevision*)oldRev {
+    Assert(newRev);
     if (_validations.count == 0)
         return 200;
+    
+    // newRev might not have its _id and _deleted properties set up:
+    NSMutableDictionary* properties = [newRev.properties.mutableCopy autorelease];
+    if (!properties)
+        properties = [NSMutableDictionary dictionary];
+    [properties setValue: newRev.docID forKey: @"_id"];
+    if (newRev.deleted)
+        [properties setObject: $true forKey: @"_deleted"];
+    
     TDValidationContext* context = [[TDValidationContext alloc] initWithDatabase: self
                                                                         revision: oldRev];
     TDStatus status = 200;
     for (TDValidationBlock validationName in _validations) {
         TDValidationBlock validation = [self validationNamed: validationName];
-        if (!validation(newRev, context)) {
+        if (!validation(properties, context)) {
             status = context.errorType;
+            // TODO: The errorMessage gets lost; should return it to the caller
             break;
         }
     }
@@ -526,10 +537,10 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
     [super dealloc];
 }
 
-- (TDRevision*) currentRevision {
+- (NSDictionary*) currentRevision {
     if (_currentRevision)
         [_db loadRevisionBody: _currentRevision options: 0];
-    return _currentRevision;
+    return _currentRevision.properties;
 }
 
 @synthesize errorType=_errorType, errorMessage=_errorMessage;

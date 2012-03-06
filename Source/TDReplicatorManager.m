@@ -24,7 +24,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
 
 
 @interface TDReplicatorManager ()
-- (BOOL) validateRevision: (TDRevision*)newRev context: (id<TDValidationContext>)context;
+- (BOOL) validateRevision: (NSDictionary*)newRev context: (id<TDValidationContext>)context;
 - (void) processAllDocs;
 @end
 
@@ -53,7 +53,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
 
 - (void) start {
     [_replicatorDB defineValidation: @"TDReplicatorManager" asBlock:
-         ^BOOL(TDRevision *newRevision, id<TDValidationContext> context) {
+         ^BOOL(NSDictionary *newRevision, id<TDValidationContext> context) {
              return [self validateRevision: newRevision context: context];
          }];
     [self processAllDocs];
@@ -120,14 +120,14 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
 
 
 // Validation function for the _replicator database:
-- (BOOL) validateRevision: (TDRevision*)newRev context: (id<TDValidationContext>)context {
+- (BOOL) validateRevision: (NSDictionary*)newProperties
+                  context: (id<TDValidationContext>)context {
     // Ignore the change if it's one I'm making myself, or if it's a deletion:
-    if (_updateInProgress || newRev.deleted)
+    if (_updateInProgress || [newProperties objectForKey: @"_deleted"])
         return YES;
     
     // First make sure the basic properties are valid:
-    NSDictionary* newProperties = newRev.properties;
-    LogTo(Sync, @"ReplicationManager: Validating %@: %@", newRev, newProperties);
+    LogTo(Sync, @"ReplicationManager: Validating %@", newProperties);
     BOOL push, createTarget;
     if ([self parseReplicatorProperties: newProperties toDatabase: NULL
                                  remote: NULL isPush: &push createTarget: &createTarget] >= 300) {
@@ -136,7 +136,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
     }
     
     // "_"-prefixed keys cannot be added:
-    NSDictionary* curProperties = context.currentRevision.properties;
+    NSDictionary* curProperties = context.currentRevision;
     for (NSString* key in newProperties) {
         if ([key hasPrefix: @"_"] &&
                 !$equal([curProperties objectForKey: key], [newProperties objectForKey: key])) {

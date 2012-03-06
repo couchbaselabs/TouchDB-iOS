@@ -360,7 +360,7 @@ static bool groupTogether(id key1, id key2, unsigned groupLevel) {
     if (groupLevel == 0 || ![key1 isKindOfClass: [NSArray class]]
                         || ![key2 isKindOfClass: [NSArray class]])
         return [key1 isEqual: key2];
-    unsigned end = MIN(groupLevel, MIN([key1 count], [key2 count]));
+    unsigned end = MIN(groupLevel, (unsigned)MIN([key1 count], [key2 count]));
     for (unsigned i = 0; i< end; ++i) {
         if (![[key1 objectAtIndex: i] isEqual: [key2 objectAtIndex: i]])
             return false;

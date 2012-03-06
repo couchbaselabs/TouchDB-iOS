@@ -167,14 +167,13 @@ TestCase(TDDatabase_Validation) {
     TDDatabase* db = createDB();
     __block BOOL validationCalled = NO;
     [db defineValidation: @"hoopy" 
-                 asBlock: ^BOOL(TDRevision *newRevision, id<TDValidationContext> context)
+                 asBlock: ^BOOL(NSDictionary *newRevision, id<TDValidationContext> context)
     {
         CAssert(newRevision);
         CAssert(context);
-        CAssert(newRevision.properties || newRevision.deleted);
         validationCalled = YES;
-        BOOL hoopy = newRevision.deleted || [newRevision.properties objectForKey: @"towel"] != nil;
-        Log(@"--- Validating %@ --> %d", newRevision.properties, hoopy);
+        BOOL hoopy = [newRevision objectForKey: @"_deleted"] || [newRevision objectForKey: @"towel"] != nil;
+        Log(@"--- Validating %@ --> %d", newRevision, hoopy);
         if (!hoopy)
          [context setErrorMessage: @"Where's your towel?"];
         return hoopy;

@@ -13,6 +13,7 @@
 
 #if DEBUG
 #import "Logging.h"
+#import "Test.h"
 #else
 #define Warn NSLog
 #define Log NSLog
@@ -47,6 +48,7 @@ int main (int argc, const char * argv[])
 {
     @autoreleasepool {
 #if DEBUG
+        RunTestCases(argc, argv);
         EnableLog(YES);
         EnableLogTo(TDListener, YES);
 #endif

@@ -11,6 +11,8 @@
 
 extern NSString* const TDHTTPErrorDomain;
 
+NSString* TDHexString( const uint8_t* bytes, size_t length, bool lowercase);
+
 NSString* TDCreateUUID( void );
 
 NSString* TDHexSHA1Digest( NSData* input );
