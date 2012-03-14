@@ -127,7 +127,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
         return YES;
     
     // First make sure the basic properties are valid:
-    LogTo(Sync, @"ReplicationManager: Validating %@", newProperties);
+    LogTo(Sync, @"ReplicatorManager: Validating %@", newProperties);
     BOOL push, createTarget;
     if ([self parseReplicatorProperties: newProperties toDatabase: NULL
                                  remote: NULL isPush: &push createTarget: &createTarget] >= 300) {
@@ -167,7 +167,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
 - (TDStatus) updateDoc: (TDRevision*)currentRev
         withProperties: (NSDictionary*)updates 
 {
-    LogTo(Sync, @"ReplicationManager: Updating %@ with %@", currentRev, updates);
+    LogTo(Sync, @"ReplicatorManager: Updating %@ with %@", currentRev, updates);
     Assert(currentRev.revID);
     TDStatus status;
     do {
@@ -225,7 +225,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
 
 // A replication document has been created, so create the matching TDReplicator:
 - (void) processInsertion: (TDRevision*)rev {
-    LogTo(Sync, @"ReplicationManager: %@ was created", rev);
+    LogTo(Sync, @"ReplicatorManager: %@ was created", rev);
     NSDictionary* properties = rev.properties;
     TDDatabase* localDb;
     NSURL* remote;
@@ -306,7 +306,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
     if (!_replicatorDB.exists)
         return;
     [_replicatorDB open];
-    LogTo(Sync, @"ReplicationManager scanning existing _replicator docs...");
+    LogTo(Sync, @"ReplicatorManager scanning existing _replicator docs...");
     TDQueryOptions options = kDefaultTDQueryOptions;
     options.includeDocs = YES;
     NSArray* allDocs = [[_replicatorDB getAllDocs: &options] objectForKey: @"rows"];
@@ -316,7 +316,7 @@ NSString* const kTDReplicatorDatabaseName = @"_replicator";
         if (state==nil || $equal(state, @"triggered"))
             [self processInsertion: [TDRevision revisionWithProperties: docProps]];
     }
-    LogTo(Sync, @"ReplicationManager done scanning.");
+    LogTo(Sync, @"ReplicatorManager done scanning.");
 }
 
 
