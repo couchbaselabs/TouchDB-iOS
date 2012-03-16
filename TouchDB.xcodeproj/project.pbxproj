@@ -396,6 +396,8 @@
 		27103F8114E9CE4400DF7209 /* TDReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDReachability.h; sourceTree = "<group>"; };
 		27103F8214E9CE4400DF7209 /* TDReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDReachability.m; sourceTree = "<group>"; };
 		27103F8714EA076600DF7209 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		27108CDE15128EA500E5B92C /* MYURLHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MYURLHandler.h; sourceTree = "<group>"; };
+		27108CDF15128EA500E5B92C /* MYURLHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MYURLHandler.m; sourceTree = "<group>"; };
 		2711CDFC14C7590A00505D55 /* TDDatabase+Attachments.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "TDDatabase+Attachments.h"; sourceTree = "<group>"; };
 		2711CDFF14C7595900505D55 /* TDDatabase+Insertion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "TDDatabase+Insertion.h"; sourceTree = "<group>"; };
 		2711CE0214C759BD00505D55 /* TDDatabase+Replication.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "TDDatabase+Replication.h"; sourceTree = "<group>"; };
@@ -1071,6 +1073,8 @@
 				27F0749E11CD5B4F00E9A2AB /* Test.m */,
 				279CE3B614D4A885009F3FA6 /* MYBlockUtils.h */,
 				279CE3B714D4A885009F3FA6 /* MYBlockUtils.m */,
+				27108CDE15128EA500E5B92C /* MYURLHandler.h */,
+				27108CDF15128EA500E5B92C /* MYURLHandler.m */,
 			);
 			path = MYUtilities;
 			sourceTree = "<group>";
