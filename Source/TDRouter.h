@@ -11,7 +11,7 @@
 
 
 typedef void (^OnResponseReadyBlock)(TDResponse*);
-typedef void (^OnDataAvailableBlock)(NSData*);
+typedef void (^OnDataAvailableBlock)(NSData* data, BOOL finished);
 typedef void (^OnFinishedBlock)();
 
 
@@ -45,6 +45,9 @@ typedef void (^OnFinishedBlock)();
 
 - (void) start;
 - (void) stop;
+
+/** Starts the router on the server thread. Returns immediately. */
+- (void) startAsync;
 
 + (NSString*) versionString;
 
