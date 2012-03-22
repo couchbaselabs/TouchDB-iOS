@@ -80,11 +80,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-LogSync YES"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-LogSyncVerbose YES"
-            isEnabled = "NO">
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-LogChangeTracker YES"
@@ -95,15 +95,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-LogTDMultiStreamWriter YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "Test_All"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Test_TDMultiStreamWriter"
+            argument = "Test_TDReachability"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument

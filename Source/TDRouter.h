@@ -7,7 +7,7 @@
 //
 
 #import "TDDatabase.h"
-@class TDServer, TDResponse, TDBody;
+@class TDServer, TDDatabaseManager, TDResponse, TDBody;
 
 
 typedef void (^OnResponseReadyBlock)(TDResponse*);
@@ -19,6 +19,7 @@ typedef void (^OnFinishedBlock)();
 {
     @private
     TDServer* _server;
+    TDDatabaseManager* _dbManager;
     NSURLRequest* _request;
     NSMutableArray* _path;
     NSDictionary* _queries;
@@ -45,9 +46,6 @@ typedef void (^OnFinishedBlock)();
 
 - (void) start;
 - (void) stop;
-
-/** Starts the router on the server thread. Returns immediately. */
-- (void) startAsync;
 
 + (NSString*) versionString;
 
