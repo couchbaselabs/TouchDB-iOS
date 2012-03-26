@@ -14,17 +14,17 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "27C70693148864BA00F0F099"
-               BuildableName = "TouchDB Demo.app"
-               BlueprintName = "TouchDB Demo"
+               BlueprintIdentifier = "270FE0C714C5008C005FF647"
+               BuildableName = "TouchServ"
+               BlueprintName = "TouchServ"
                ReferencedContainer = "container:TouchDB.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.GDB"
-      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.GDB"
+      selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+      selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       buildConfiguration = "Debug">
       <Testables>
@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "27C70693148864BA00F0F099"
-            BuildableName = "TouchDB Demo.app"
-            BlueprintName = "TouchDB Demo"
+            BlueprintIdentifier = "270FE0C714C5008C005FF647"
+            BuildableName = "TouchServ"
+            BlueprintName = "TouchServ"
             ReferencedContainer = "container:TouchDB.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -51,68 +51,35 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "27C70693148864BA00F0F099"
-            BuildableName = "TouchDB Demo.app"
-            BlueprintName = "TouchDB Demo"
+            BlueprintIdentifier = "270FE0C714C5008C005FF647"
+            BuildableName = "TouchServ"
+            BlueprintName = "TouchServ"
             ReferencedContainer = "container:TouchDB.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-Log YES"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogTDRouter YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogTDListener YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogTDDatabase YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogView YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogSync YES"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogSyncVerbose YES"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogChangeTracker YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-LogRemoteRequest YES"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "Test_All"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "Test_TDReachability"
-            isEnabled = "NO">
+            argument = "Test_TDView_MapConflicts"
+            isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "Test_Only"
             isEnabled = "YES">
          </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-Log YES"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-LogView YES"
+            isEnabled = "YES">
+         </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
-         <AdditionalOption
-            key = "MallocScribble"
-            value = ""
-            isEnabled = "YES">
-         </AdditionalOption>
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
@@ -124,9 +91,9 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "27C70693148864BA00F0F099"
-            BuildableName = "TouchDB Demo.app"
-            BlueprintName = "TouchDB Demo"
+            BlueprintIdentifier = "270FE0C714C5008C005FF647"
+            BuildableName = "TouchServ"
+            BlueprintName = "TouchServ"
             ReferencedContainer = "container:TouchDB.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
