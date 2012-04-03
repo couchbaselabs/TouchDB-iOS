@@ -17,18 +17,23 @@
 
 #import "TDSocketChangeTracker.h"
 #import "TDBase64.h"
+#import "MYBlockUtils.h"
 
 
+// Values of _state:
 enum {
     kStateStatus,
     kStateHeaders,
-    kStateChunks
+    kStateChunks,
 };
 
 #define kMaxRetries 6
+#define kInitialRetryDelay 0.2
+#define kReadLength 8192u
 
 
 @implementation TDSocketChangeTracker
+
 
 - (BOOL) start {
     NSAssert(!_trackingInput, @"Already started");
@@ -84,8 +89,9 @@ enum {
 #endif
     
     _state = kStateStatus;
+    _atEOF = _inputAvailable = _parsing = false;
     
-    _inputBuffer = [[NSMutableData alloc] initWithCapacity: 1024];
+    _inputBuffer = [[NSMutableData alloc] initWithCapacity: kReadLength];
     
     [_trackingOutput setDelegate: self];
     [_trackingOutput scheduleInRunLoop: [NSRunLoop currentRunLoop] forMode: NSRunLoopCommonModes];
@@ -118,7 +124,7 @@ enum {
         LogTo(ChangeTracker, @"%@: stop", self);
         [self clearConnection];
         [NSObject cancelPreviousPerformRequestsWithTarget: self selector: @selector(start)
-                                                   object: nil];
+                                                   object: nil];    // cancel pending retries
         [super stop];
     }
 }
@@ -132,7 +138,10 @@ enum {
 }
 
 
-- (BOOL) appendToChangeLine: (const void*)bytes length: (NSUInteger)length {
+- (void) readChangeLine: (const void*)bytes
+                 length: (NSUInteger)length
+              intoArray: (NSMutableArray*)changes
+{
     if (_changeBuffer)
         [_changeBuffer appendBytes: bytes length: length];
     else
@@ -145,15 +154,14 @@ enum {
         NSData* line = [_changeBuffer subdataWithRange: NSMakeRange(0, eol-start)];
         [_changeBuffer replaceBytesInRange: NSMakeRange(0, eol-start+1)
                                 withBytes: NULL length: 0];
-        // Finally! Parse the line as JSON:
-        if (![self receivedChunk: line])
-            return NO;
+        if (line.length > 0)
+            [changes addObject: line];
     }
-    return YES;
 }
 
 
 - (void) readLines {
+    NSMutableArray* changes = $marray();
     const char* pos = _inputBuffer.bytes;
     const char* end = pos + _inputBuffer.length;
     BOOL keepGoing = YES;
@@ -167,7 +175,6 @@ enum {
                                                    length: lineLength
                                                  encoding: NSUTF8StringEncoding] autorelease];
         pos = crlf + 2;
-        LogTo(ChangeTracker, @"%@: LINE: \"%@\"", self, line);
         if (!line) {
             [self failUnparseable: @"invalid UTF-8"];
             break;
@@ -202,7 +209,7 @@ enum {
                     break;     // Don't read the chunk till it's complete
                 }
                 // Append the chunk to the current change line:
-                [self appendToChangeLine: pos length: chunkLength];
+                [self readChangeLine: pos length: chunkLength intoArray: changes];
                 pos += chunkLength;
             }
         }
@@ -211,13 +218,94 @@ enum {
     // Remove the parsed lines:
     [_inputBuffer replaceBytesInRange: NSMakeRange(0, pos - (const char*)_inputBuffer.bytes)
                             withBytes: NULL length: 0];
+    
+    if (changes.count > 0)
+        [self asyncParseChangeLines: changes];
+}
+
+
+#pragma mark - ASYNC PARSING:
+
+
+- (void) asyncParseChangeLines: (NSArray*)lines {
+    static NSOperationQueue* sParseQueue;
+    if (!sParseQueue)
+        sParseQueue = [[NSOperationQueue alloc] init];
+    
+    LogTo(ChangeTracker, @"%@: Async parsing %u changes...", self, lines.count);
+    Assert(!_parsing);
+    _parsing = true;
+    NSThread* resultThread = [NSThread currentThread];
+    [sParseQueue addOperationWithBlock: ^{
+        // Parse on background thread:
+        bool allParsed = true;
+        NSMutableArray* parsedChanges = [NSMutableArray arrayWithCapacity: lines.count];
+        for (NSData* line in lines) {
+            id change = [TDJSON JSONObjectWithData: line options: 0 error: NULL];
+            if (!change) {
+                Warn(@"TDSocketChangeTracker received unparseable change line from server: %@", [line my_UTF8ToString]);
+                allParsed = false;
+                break;
+            }
+            [parsedChanges addObject: change];
+        }
+        MYOnThread(resultThread, ^{
+            // Process change lines on original thread:
+            Assert(_parsing);
+            _parsing = false;
+            if (!_trackingInput)
+                return;
+            LogTo(ChangeTracker, @"%@: Notifying %u changes...", self, parsedChanges.count);
+            for (id change in parsedChanges) {
+                if (![self receivedChange: change]) {
+                    [self failUnparseable: change];
+                    break;
+                }
+            }
+            if (!allParsed) {
+                [self setUpstreamError: @"Unparseable change line"];
+                [self stop];
+            }
+            
+            // Read more data if there is any, or stop if stream's at EOF:
+            if (_inputAvailable)
+                [self readFromInput];
+            else if (_atEOF)
+                [self stop];
+        });
+    }];
+}
+
+
+#pragma mark - STREAM HANDLING:
+
+
+- (void) readFromInput {
+    Assert(!_parsing);
+    Assert(_inputAvailable);
+    _inputAvailable = false;
+    
+    uint8_t* buffer;
+    NSUInteger bufferLength;
+    NSInteger bytesRead;
+    if ([_trackingInput getBuffer: &buffer length: &bufferLength]) {
+        [_inputBuffer appendBytes: buffer length: bufferLength];
+        bytesRead = bufferLength;
+    } else {
+        uint8_t buffer[kReadLength];
+        bytesRead = [_trackingInput read: buffer maxLength: sizeof(buffer)];
+        if (bytesRead > 0)
+            [_inputBuffer appendBytes: buffer length: bytesRead];
+    }
+    LogTo(ChangeTracker, @"%@: read %ld bytes", self, (long)bytesRead);
+    [self readLines];
 }
 
 
 - (void) errorOccurred: (NSError*)error {
     if (++_retryCount <= kMaxRetries) {
         [self clearConnection];
-        NSTimeInterval retryDelay = 0.2 * (1 << (_retryCount-1));
+        NSTimeInterval retryDelay = kInitialRetryDelay * (1 << (_retryCount-1));
         [self performSelector: @selector(start) withObject: nil afterDelay: retryDelay];
     } else {
         Warn(@"%@: Can't connect, giving up: %@", self, error);
@@ -245,26 +333,17 @@ enum {
         }
         case NSStreamEventHasBytesAvailable: {
             LogTo(ChangeTracker, @"%@: HasBytesAvailable %@", self, stream);
-            uint8_t* buffer;
-            NSUInteger bufferLength;
-            NSInteger bytesRead;
-            if ([stream getBuffer: &buffer length: &bufferLength]) {
-                [_inputBuffer appendBytes: buffer length: bufferLength];
-                bytesRead = bufferLength;
-            } else {
-                uint8_t buffer[8192];
-                bytesRead = [stream read: buffer maxLength: sizeof(buffer)];
-                [_inputBuffer appendBytes: buffer length: bytesRead];
-            }
-            LogTo(ChangeTracker, @"%@: read %ld bytes", self, (long)bytesRead);
-            [self readLines];
+            _inputAvailable = true;
+            // If still chewing on last bytes, don't eat any more yet
+            if (!_parsing)
+                [self readFromInput];
             break;
         }
         case NSStreamEventEndEncountered:
             LogTo(ChangeTracker, @"%@: EndEncountered %@", self, stream);
-            if (_inputBuffer.length > 0 || _changeBuffer.length > 0)
-                Warn(@"%@ connection closed with unparsed data in buffer", self);
-            [self stop];
+            _atEOF = true;
+            if (!_parsing)
+                [self stop];
             break;
         case NSStreamEventErrorOccurred:
             LogTo(ChangeTracker, @"%@: ErrorOccurred %@: %@", self, stream, stream.streamError);

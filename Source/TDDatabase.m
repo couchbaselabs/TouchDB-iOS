@@ -399,31 +399,6 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
 }
 
 
-/** Splices the contents of an NSDictionary into JSON data (that already represents a dict), without parsing the JSON. */
-static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
-    if (!dict.count)
-        return json;
-    NSData* extraJson = [NSJSONSerialization dataWithJSONObject: dict options:0 error:nil];
-    if (!extraJson)
-        return nil;
-    size_t jsonLength = json.length;
-    size_t extraLength = extraJson.length;
-    CAssert(jsonLength >= 2);
-    CAssertEq(*(const char*)json.bytes, '{');
-    if (jsonLength == 2)  // Original JSON was empty
-        return extraJson;
-    NSMutableData* newJson = [NSMutableData dataWithLength: jsonLength + extraLength - 1];
-    if (!newJson)
-        return nil;
-    uint8_t* dst = newJson.mutableBytes;
-    memcpy(dst, json.bytes, jsonLength - 1);                          // Copy json w/o trailing '}'
-    dst += jsonLength - 1;
-    *dst++ = ',';                                                     // Add a ','
-    memcpy(dst, (const uint8_t*)extraJson.bytes + 1, extraLength - 1);  // Add "extra" after '{'
-    return newJson;
-}
-
-
 /** Inserts the _id, _rev and _attachments properties into the JSON data and stores it in rev.
     Rev must already have its revID and sequence properties set. */
 - (NSDictionary*) extraPropertiesForRevision: (TDRevision*)rev options: (TDContentOptions)options
@@ -486,7 +461,7 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 {
     NSDictionary* extra = [self extraPropertiesForRevision: rev options: options];
     if (json)
-        rev.asJSON = appendDictToJSON(json, extra);
+        rev.asJSON = [TDJSON appendDictionary: extra toJSONDictionaryData: json];
     else
         rev.properties = extra;
 }
@@ -504,8 +479,8 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
     [rev release];
     if (json==nil || (json.length==2 && memcmp(json.bytes, "{}", 2)==0))
         return extra;      // optimization, and workaround for issue #44
-    NSMutableDictionary* docProperties = [NSJSONSerialization JSONObjectWithData: json
-                                                            options: NSJSONReadingMutableContainers
+    NSMutableDictionary* docProperties = [TDJSON JSONObjectWithData: json
+                                                            options: TDJSONReadingMutableContainers
                                                               error: nil];
     [docProperties addEntriesFromDictionary: extra];
     return docProperties;
@@ -517,23 +492,30 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
                           options: (TDContentOptions)options
 {
     TDRevision* result = nil;
-    NSString* sql;
+    NSMutableString* sql = [NSMutableString stringWithString: @"SELECT revid, deleted, sequence"];
+    if (!(options & kTDNoBody))
+        [sql appendString: @", json"];
     if (revID)
-        sql = @"SELECT revid, deleted, json, sequence FROM revs, docs "
-               "WHERE docs.docid=? AND revs.doc_id=docs.doc_id AND revid=? LIMIT 1";
+        [sql appendString: @" FROM revs, docs "
+               "WHERE docs.docid=? AND revs.doc_id=docs.doc_id AND revid=? LIMIT 1"];
     else
-        sql = @"SELECT revid, deleted, json, sequence FROM revs, docs "
+        [sql appendString: @" FROM revs, docs "
                "WHERE docs.docid=? AND revs.doc_id=docs.doc_id and current=1 and deleted=0 "
-               "ORDER BY revid DESC LIMIT 1";
+               "ORDER BY revid DESC LIMIT 1"];
     FMResultSet *r = [_fmdb executeQuery: sql, docID, revID];
     if ([r next]) {
         if (!revID)
             revID = [r stringForColumnIndex: 0];
         BOOL deleted = [r boolForColumnIndex: 1];
-        NSData* json = [r dataNoCopyForColumnIndex: 2];
         result = [[[TDRevision alloc] initWithDocID: docID revID: revID deleted: deleted] autorelease];
-        result.sequence = [r longLongIntForColumnIndex: 3];
-        [self expandStoredJSON: json intoRevision: result options: options];
+        result.sequence = [r longLongIntForColumnIndex: 2];
+        
+        if (options != kTDNoBody) {
+            NSData* json = nil;
+            if (!(options & kTDNoBody))
+                json = [r dataNoCopyForColumnIndex: 3];
+            [self expandStoredJSON: json intoRevision: result options: options];
+        }
     }
     [r close];
     return result;
@@ -541,8 +523,7 @@ static NSData* appendDictToJSON(NSData* json, NSDictionary* dict) {
 
 
 - (BOOL) existsDocumentWithID: (NSString*)docID revisionID: (NSString*)revID {
-    return [self getDocumentWithID: docID revisionID: revID options: 0] != nil;
-    //OPT: Do this without loading the data
+    return [self getDocumentWithID: docID revisionID: revID options: kTDNoBody] != nil;
 }
 
 

@@ -122,9 +122,9 @@ extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
     NSString* value = [self query: param];
     if (!value)
         return nil;
-    id result = [NSJSONSerialization
-                            JSONObjectWithData: [value dataUsingEncoding: NSUTF8StringEncoding]
-                                       options: NSJSONReadingAllowFragments error: outError];
+    id result = [TDJSON JSONObjectWithData: [value dataUsingEncoding: NSUTF8StringEncoding]
+                                   options: TDJSONReadingAllowFragments
+                                     error: outError];
     if (!result)
         Warn(@"TDRouter: invalid JSON in query param ?%@=%@", param, value);
     return result;
@@ -139,8 +139,8 @@ extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
 
 
 - (NSDictionary*) bodyAsDictionary {
-    return $castIf(NSDictionary, [NSJSONSerialization JSONObjectWithData: _request.HTTPBody
-                                                                 options: 0 error: nil]);
+    return $castIf(NSDictionary, [TDJSON JSONObjectWithData: _request.HTTPBody
+                                                    options: 0 error: nil]);
 }
 
 
@@ -465,18 +465,23 @@ static NSArray* splitPath( NSURL* url ) {
     self.body = bodyObject ? [TDBody bodyWithProperties: bodyObject] : nil;
 }
 
+- (void) setMultipartBody: (TDMultipartWriter*)mp {
+    // OPT: Would be better to stream this than shoving all the data into _body.
+    self.body = [TDBody bodyWithJSON: mp.allOutput];
+    [self setValue: mp.contentType ofHeader: @"Content-Type"];
+}
+
 - (void) setMultipartBody: (NSArray*)parts type: (NSString*)type {
     TDMultipartWriter* mp = [[TDMultipartWriter alloc] initWithContentType: type
                                                                       boundary: nil];
     for (id part in parts) {
         if (![part isKindOfClass: [NSData class]]) {
-            part = [NSJSONSerialization dataWithJSONObject: part options: 0 error: nil];
+            part = [TDJSON dataWithJSONObject: part options: 0 error: nil];
             [mp setNextPartsHeaders: $dict({@"Content-Type", @"application/json"})];
         }
         [mp addData: part];
     }
-    self.body = [TDBody bodyWithJSON: mp.allOutput];
-    [self setValue: mp.contentType ofHeader: @"Content-Type"];
+    [self setMultipartBody: mp];
     [mp release];
 }
 

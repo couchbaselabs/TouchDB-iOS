@@ -41,6 +41,7 @@ extern NSString* const kTDAttachmentBlobKeyProperty;
 
 @interface TDDatabase (Attachments_Internal)
 - (void) rememberAttachmentWritersForDigests: (NSDictionary*)writersByDigests;
+- (TDBlobStoreWriter*) attachmentWriterForAttachment: (NSDictionary*)attachment;
 - (NSData*) keyForAttachment: (NSData*)contents;
 - (TDStatus) insertAttachmentWithKey: (NSData*)keyData
                          forSequence: (SequenceNumber)sequence
@@ -104,8 +105,10 @@ extern NSString* const kTDAttachmentBlobKeyProperty;
 - (void) beginReplicating;
 - (void) addToInbox: (TDRevision*)rev;
 - (void) processInbox: (TDRevisionList*)inbox;  // override this
-- (void) sendAsyncRequest: (NSString*)method path: (NSString*)relativePath body: (id)body
-             onCompletion: (TDRemoteRequestCompletionBlock)onCompletion;
+- (TDRemoteJSONRequest*) sendAsyncRequest: (NSString*)method
+                                     path: (NSString*)relativePath
+                                     body: (id)body
+                             onCompletion: (TDRemoteRequestCompletionBlock)onCompletion;
 - (void) asyncTaskStarted;
 - (void) asyncTasksFinished: (NSUInteger)numTasks;
 - (void) stopped;

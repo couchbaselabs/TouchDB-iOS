@@ -284,7 +284,6 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     NSString* urlStr = [_remote.absoluteString stringByAppendingString: path];
     [[[TDMultipartDownloader alloc] initWithURL: [NSURL URLWithString: urlStr]
                                        database: _db
-                                       revision: rev
                                    onCompletion:
         ^(TDMultipartDownloader* download, NSError *error) {
             // OK, now we've got the response revision:
@@ -447,6 +446,6 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 static NSString* joinQuotedEscaped(NSArray* strings) {
     if (strings.count == 0)
         return @"[]";
-    NSData* json = [NSJSONSerialization dataWithJSONObject: strings options: 0 error: NULL];
-    return TDEscapeURLParam([json my_UTF8ToString]);
+    NSString* json = [TDJSON stringWithJSONObject: strings options: 0 error: NULL];
+    return TDEscapeURLParam(json);
 }
