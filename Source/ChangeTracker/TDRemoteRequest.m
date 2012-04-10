@@ -17,6 +17,8 @@
 #import "TDMisc.h"
 #import "TDMultipartReader.h"
 #import "TDBlobStore.h"
+#import "TDRouter.h"
+#import "TDReplicator.h"
 
 
 // Max number of retry attempts for a transient failure
@@ -27,6 +29,7 @@
 
 
 - (id) initWithMethod: (NSString*)method URL: (NSURL*)url body: (id)body
+           authorizer: (id<TDAuthorizer>)authorizer
          onCompletion: (TDRemoteRequestCompletionBlock)onCompletion
 {
     self = [super init];
@@ -36,7 +39,15 @@
         _request = [[NSMutableURLRequest alloc] initWithURL: url];
         _request.HTTPMethod = method;
         _request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+        [_request setValue: $sprintf(@"TouchDB/%@", [TDRouter versionString])
+                  forHTTPHeaderField:@"User-Agent"];
+        
         [self setupRequest: _request withBody: body];
+        
+        NSString* authHeader = [authorizer authorizeURLRequest: _request];
+        if (authHeader)
+            [_request setValue: authHeader forHTTPHeaderField: @"Authorization"];
+        
         [self start];
     }
     return self;
