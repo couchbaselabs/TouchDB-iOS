@@ -27,17 +27,6 @@ NSString* TDCreateUUID() {
 }
 
 
-NSString* TDHexString( const uint8_t* bytes, size_t length, bool lowercase) {
-    char hex[2*length + 1];
-    char *dst = hex;
-    for( size_t i=0; i<length; i+=1 )
-        dst += sprintf(dst,(lowercase ? "%02x" : "%02X"), bytes[i]);
-    return [[[NSString alloc] initWithBytes: hex
-                                     length: 2*length
-                                   encoding: NSASCIIStringEncoding] autorelease];
-}
-
-
 NSString* TDHexSHA1Digest( NSData* input ) {
     unsigned char digest[CC_SHA1_DIGEST_LENGTH];
     CC_SHA1(input.bytes, (CC_LONG)input.length, digest);
