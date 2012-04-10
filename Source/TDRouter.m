@@ -21,6 +21,7 @@
 #import "TDMultipartWriter.h"
 #import "TDReplicatorManager.h"
 #import "TDInternal.h"
+#import "ExceptionUtils.h"
 #import <objc/message.h>
 
 
@@ -198,13 +199,25 @@ extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
 }
 
 
+- (NSString*) ifMatch {
+    NSString* ifMatch = [_request valueForHTTPHeaderField: @"If-Match"];
+    if (!ifMatch)
+        return nil;
+    // Value of If-Match is an ETag, so have to trim the quotes around it:
+    if (ifMatch.length > 2 && [ifMatch hasPrefix: @"\""] && [ifMatch hasSuffix: @"\""])
+        return [ifMatch substringWithRange: NSMakeRange(1, ifMatch.length-2)];
+    else
+        return nil;
+}
+
+
 - (TDStatus) openDB {
     // As a special case, the _replicator db is created on demand (as though it already existed)
     if (!_db.exists && !$equal(_db.name, kTDReplicatorDatabaseName))
-        return 404;
+        return kTDStatusNotFound;
     if (![_db open])
-        return 500;
-    return 200;
+        return kTDStatusDBError;
+    return kTDStatusOK;
 }
 
 
@@ -249,7 +262,7 @@ static NSArray* splitPath( NSURL* url ) {
     // First interpret the components of the request:
     _path = [splitPath(_request.URL) mutableCopy];
     if (!_path)
-        return 400;
+        return kTDStatusBadRequest;
         
     NSUInteger pathLen = _path.count;
     if (pathLen > 0) {
@@ -259,7 +272,7 @@ static NSArray* splitPath( NSURL* url ) {
         } else {
             _db = [[_dbManager databaseNamed: dbName] retain];
             if (!_db)
-                return 400;
+                return kTDStatusBadID;
             [message appendString: @":"];
         }
     } else {
@@ -270,18 +283,18 @@ static NSArray* splitPath( NSURL* url ) {
     if (_db && pathLen > 1) {
         // Make sure database exists, then interpret doc name:
         TDStatus status = [self openDB];
-        if (status >= 300)
+        if (TDStatusIsError(status))
             return status;
         NSString* name = [_path objectAtIndex: 1];
         if (![name hasPrefix: @"_"]) {
             // Regular document
             if (![TDDatabase isValidDocumentID: name])
-                return 400;
+                return kTDStatusBadID;
             docID = name;
         } else if ([name isEqualToString: @"_design"] || [name isEqualToString: @"_local"]) {
             // "_design/____" and "_local/____" are document names
             if (pathLen <= 2)
-                return 404;
+                return kTDStatusNotFound;
             docID = [name stringByAppendingPathComponent: [_path objectAtIndex: 2]];
             [_path replaceObjectAtIndex: 1 withObject: docID];
             [_path removeObjectAtIndex: 2];
@@ -337,7 +350,15 @@ static NSArray* splitPath( NSURL* url ) {
 - (void) run {
     Assert(_dbManager);
     // Call the appropriate handler method:
-    TDStatus status = [self route];
+    TDStatus status;
+    @try {
+        status = [self route];
+    } @catch (NSException *x) {
+        MYReportException(x, @"handling TouchDB request");
+        status = kTDStatusException;
+        [_response.headers removeAllObjects];
+        _response.body = nil;
+    }
 
     // Configure response headers:
     if (status < 300 && !_response.body && ![_response.headers objectForKey: @"Content-Type"]) {
@@ -351,8 +372,8 @@ static NSArray* splitPath( NSURL* url ) {
     if (accept && !$equal(accept, @"*/*")) {
         NSString* responseType = _response.baseContentType;
         if (responseType && [accept rangeOfString: responseType].length == 0) {
-            LogTo(TDRouter, @"Error 406: Can't satisfy request Accept: %@", accept);
-            status = 406;
+            LogTo(TDRouter, @"Error kTDStatusNotAcceptable: Can't satisfy request Accept: %@", accept);
+            status = kTDStatusNotAcceptable;
             _response.headers = [NSMutableDictionary dictionary];
             _response.body = nil;
         }
@@ -414,7 +435,7 @@ static NSArray* splitPath( NSURL* url ) {
 
 
 - (TDStatus) do_UNKNOWN {
-    return 400;
+    return kTDStatusBadRequest;
 }
 
 
@@ -429,7 +450,7 @@ static NSArray* splitPath( NSURL* url ) {
 {
     self = [super init];
     if (self) {
-        _status = 200;
+        _status = kTDStatusOK;
         _headers = [[NSMutableDictionary alloc] init];
     }
     return self;

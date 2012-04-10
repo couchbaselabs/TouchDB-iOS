@@ -19,9 +19,6 @@
 #import <CommonCrypto/CommonDigest.h>
 
 
-NSString* const TDHTTPErrorDomain = @"TDHTTP";
-
-
 NSString* TDCreateUUID() {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     NSString* str = NSMakeCollectable(CFUUIDCreateString(NULL, uuid));
@@ -44,16 +41,17 @@ NSString* TDHexString( const uint8_t* bytes, size_t length, bool lowercase) {
 NSString* TDHexSHA1Digest( NSData* input ) {
     unsigned char digest[CC_SHA1_DIGEST_LENGTH];
     CC_SHA1(input.bytes, (CC_LONG)input.length, digest);
-    return TDHexString(digest, sizeof(digest), false);
+    return TDHexFromBytes(&digest, sizeof(digest));
 }
 
-
-NSError* TDHTTPError( int status, NSURL* url ) {
-    NSString* reason = [NSHTTPURLResponse localizedStringForStatusCode: status];
-    NSDictionary* info = $dict({NSURLErrorKey, url},
-                               {NSLocalizedFailureReasonErrorKey, reason},
-                               {NSLocalizedDescriptionKey, $sprintf(@"%i %@", status, reason)});
-    return [NSError errorWithDomain: TDHTTPErrorDomain code: status userInfo: info];
+NSString* TDHexFromBytes( const void* bytes, size_t length) {
+    char hex[2*length + 1];
+    char *dst = &hex[0];
+    for( size_t i=0; i<length; i+=1 )
+        dst += sprintf(dst,"%02x", ((const uint8_t*)bytes)[i]); // important: generates lowercase!
+    return [[[NSString alloc] initWithBytes: hex
+                                     length: 2*length
+                                   encoding: NSASCIIStringEncoding] autorelease];
 }
 
 

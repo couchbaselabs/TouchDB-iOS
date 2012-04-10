@@ -21,7 +21,7 @@
 + (NSDictionary*) readData: (NSData*)data
                     ofType: (NSString*)contentType
                 toDatabase: (TDDatabase*)database
-                    status: (int*)outStatus
+                    status: (TDStatus*)outStatus
 {
     NSDictionary* result = nil;
     TDMultipartDocumentReader* reader = [[self alloc] initWithDatabase: database];
@@ -85,7 +85,7 @@
         return YES;
     }
     // Unknown/invalid MIME type:
-    _status = 406;
+    _status = kTDStatusNotAcceptable;
     return NO;
 }
 
@@ -95,7 +95,7 @@
         [_multipartReader appendData: data];
         if (_multipartReader.failed) {
             Warn(@"%@: received unparseable MIME multipart response", self);
-            _status = 502;
+            _status = kTDStatusUpstreamError;
             return NO;
         }
     } else {
@@ -110,19 +110,19 @@
     if (_multipartReader) {
         if (!_multipartReader.finished) {
             Warn(@"%@: received incomplete MIME multipart response", self);
-            _status = 502;
+            _status = kTDStatusUpstreamError;
             return NO;
         }
         
         if (![self registerAttachments]) {
-            _status = 502;
+            _status = kTDStatusUpstreamError;
             return NO;
         }
     } else {
         if (![self parseJSONBuffer])
             return NO;
     }
-    _status = 201;
+    _status = kTDStatusCreated;
     return YES;
 }
 
@@ -197,7 +197,7 @@
     if (![document isKindOfClass: [NSDictionary class]]) {
         Warn(@"%@: received unparseable JSON data '%@'",
              self, [_jsonBuffer my_UTF8ToString]);
-        _status = 502;
+        _status = kTDStatusUpstreamError;
         return NO;
     }
     _document = [document retain];
@@ -220,6 +220,7 @@
             NSString* digest = [attachment objectForKey: @"digest"];
             TDBlobStoreWriter* writer = [_attachmentsByName objectForKey: attachmentName];
             if (writer) {
+                // Identified the MIME body by the filename in its Disposition header:
                 NSString* actualDigest = writer.MD5DigestString;
                 if (digest && !$equal(digest, actualDigest) 
                            && !$equal(digest, writer.SHA1DigestString)) {
@@ -228,23 +229,34 @@
                     return NO;
                 }
                 [attachment setObject: actualDigest forKey: @"digest"];
-            } else {
+            } else if (digest) {
+                // Else look up the MIME body by its computed digest:
                 writer = [_attachmentsByDigest objectForKey: digest];
                 if (!writer) {
                     Warn(@"%@: Attachment '%@' does not appear in a MIME body",
                          self, attachmentName);
                     return NO;
                 }
+            } else if (attachments.count == 1 && _attachmentsByDigest.count == 1) {
+                // Else there's only one attachment, so just assume it matches & use it:
+                writer = [[_attachmentsByDigest allValues] objectAtIndex: 0];
+                [attachment setObject: writer.MD5DigestString forKey: @"digest"];
+            } else {
+                // No digest metatata, no filename in MIME body; give up:
+                Warn(@"%@: Attachment '%@' has no digest metadata; cannot identify MIME body",
+                     self, attachmentName);
+                return NO;
             }
             
             // Check that the length matches:
             NSNumber* lengthObj = [attachment objectForKey: @"encoded_length"]
                                ?: [attachment objectForKey: @"length"];
             if (!lengthObj || writer.length != [$castIf(NSNumber, lengthObj) unsignedLongLongValue]) {
-                Warn(@"%@: attachment has invalid length %@ (should be %llu)",
-                    self, lengthObj, writer.length);
+                Warn(@"%@: Attachment '%@' has invalid length %@ (should be %llu)",
+                    self, attachmentName, lengthObj, writer.length);
                 return NO;
             }
+            
             ++nAttachmentsInDoc;
         }
     }
@@ -253,6 +265,7 @@
             self, _attachmentsByDigest.count, nAttachmentsInDoc);
         return NO;
     }
+    
     // If everything's copacetic, hand over the (uninstalled) blobs to the database to remember:
     [_database rememberAttachmentWritersForDigests: _attachmentsByDigest];
     return YES;
