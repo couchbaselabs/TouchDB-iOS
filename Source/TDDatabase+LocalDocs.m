@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDDatabase+LocalDocs.h"
-#import "TDRevision.h"
+#import <TouchDB/TDRevision.h>
 #import "TDBody.h"
 #import "TDInternal.h"
 
@@ -40,7 +40,7 @@
         else {
             properties = [TDJSON JSONObjectWithData: json
                                             options:TDJSONReadingMutableContainers
-                                              error: nil];
+                                              error: NULL];
             if (!properties)
                 return nil;
         }

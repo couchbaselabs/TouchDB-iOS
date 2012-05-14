@@ -14,6 +14,9 @@
 //  and limitations under the License.
 
 #import "TDServer.h"
+#import <TouchDB/TDDatabase.h>
+#import "TDReplicatorManager.h"
+#import "TDMisc.h"
 #import "TDDatabaseManager.h"
 #import "TDInternal.h"
 #import "TDURLProtocol.h"
@@ -25,7 +28,7 @@
 
 #if DEBUG
 + (TDServer*) createEmptyAtPath: (NSString*)path {
-    [[NSFileManager defaultManager] removeItemAtPath: path error: nil];
+    [[NSFileManager defaultManager] removeItemAtPath: path error: NULL];
     NSError* error;
     TDServer* server = [[self alloc] initWithDirectory: path error: &error];
     Assert(server, @"Failed to create server at %@: %@", path, error);
@@ -95,11 +98,13 @@
 
             [[NSThread currentThread] setName:@"TouchDB"];
             
+#ifndef GNUSTEP
             // Add a no-op source so the runloop won't stop on its own:
             CFRunLoopSourceContext context = {};  // all zeros
             CFRunLoopSourceRef source = CFRunLoopSourceCreate(NULL, 0, &context);
             CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopDefaultMode);
             CFRelease(source);
+#endif
             
             // Initialize the replicator:
             [_manager replicatorManager];

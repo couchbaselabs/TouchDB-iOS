@@ -22,10 +22,19 @@
 #import "TDReplicatorManager.h"
 #import "TDInternal.h"
 #import "ExceptionUtils.h"
+
+#ifdef GNUSTEP
+#import <GNUstepBase/NSURL+GNUstepBase.h>
+#else
 #import <objc/message.h>
+#endif
 
 
-extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
+#ifdef GNUSTEP
+static double TouchDBVersionNumber = 0.7;
+#else
+extern double TouchDBVersionNumber; // Defined in Xcode-generated TouchDB_vers.c
+#endif
 
 
 @implementation TDRouter
@@ -143,7 +152,7 @@ extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
 
 - (NSDictionary*) bodyAsDictionary {
     return $castIf(NSDictionary, [TDJSON JSONObjectWithData: _request.HTTPBody
-                                                    options: 0 error: nil]);
+                                                    options: 0 error: NULL]);
 }
 
 
@@ -225,19 +234,25 @@ extern double TouchDBVersionNumber; // Defined in generated TouchDB_vers.c
 
 static NSArray* splitPath( NSURL* url ) {
     // Unfortunately can't just call url.path because that converts %2F to a '/'.
+#ifdef GNUSTEP
+    NSString* pathString = [url pathWithEscapes];
+#else
     NSString* pathString = NSMakeCollectable(CFURLCopyPath((CFURLRef)url));
+#endif
     NSMutableArray* path = $marray();
     for (NSString* comp in [pathString componentsSeparatedByString: @"/"]) {
         if ([comp length] > 0) {
-            comp = [comp stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-            if (!comp) {
+            NSString* unescaped = [comp stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+            if (!unescaped) {
                 path = nil;     // bad URL
                 break;
             }
-            [path addObject: comp];
+            [path addObject: unescaped];
         }
     }
+#ifndef GNUSTEP
     [pathString release];
+#endif
     return path;
 }
 
@@ -354,7 +369,12 @@ static NSArray* splitPath( NSURL* url ) {
         }
     }
     
+#ifdef GNUSTEP
+    IMP fn = objc_msg_lookup(self, sel);
+    return (TDStatus) fn(self, sel, _db, docID, attachmentName);
+#else
     return (TDStatus) objc_msgSend(self, sel, _db, docID, attachmentName);
+#endif
 }
 
 
@@ -543,7 +563,7 @@ static NSArray* splitPath( NSURL* url ) {
                                                                       boundary: nil];
     for (id part in parts) {
         if (![part isKindOfClass: [NSData class]]) {
-            part = [TDJSON dataWithJSONObject: part options: 0 error: nil];
+            part = [TDJSON dataWithJSONObject: part options: 0 error: NULL];
             [mp setNextPartsHeaders: $dict({@"Content-Type", @"application/json"})];
         }
         [mp addData: part];

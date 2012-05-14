@@ -16,8 +16,11 @@
 // <http://wiki.apache.org/couchdb/HTTP_database_API#Changes>
 
 #import "TDSocketChangeTracker.h"
+#import "TDStatus.h"
 #import "TDBase64.h"
 #import "MYBlockUtils.h"
+
+#import <string.h>
 
 
 // Values of _state:
@@ -40,20 +43,20 @@ enum {
     NSAssert(_mode == kContinuous, @"TDSocketChangeTracker only supports continuous mode");
     
     [super start];
-    NSMutableString* request = [NSMutableString stringWithFormat:
-                                     @"GET /%@/%@ HTTP/1.1\r\n"
-                                     @"Host: %@\r\n",
-                                self.databaseName, self.changesFeedPath, _databaseURL.host];
-    NSURLCredential* credential = self.authCredential;
-    if (credential) {
-        NSString* auth = [NSString stringWithFormat: @"%@:%@",
-                          credential.user, credential.password];
-        auth = [TDBase64 encode: [auth dataUsingEncoding: NSUTF8StringEncoding]];
-        [request appendFormat: @"Authorization: Basic %@\r\n", auth];
-    }
-    LogTo(ChangeTracker, @"%@: Starting with request:\n%@", self, request);
-    [request appendString: @"\r\n"];
-    _trackingRequest = [request copy];
+    
+    CFHTTPMessageRef request = CFHTTPMessageCreateRequest(NULL, CFSTR("GET"),
+                                                          (CFURLRef)self.changesFeedURL,
+                                                          kCFHTTPVersion1_1);
+    Assert(request);
+    CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Host"), (CFStringRef)_databaseURL.host);
+    NSString* auth = self.authorizationHeader;
+    if (auth)
+        CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Authorization"), (CFStringRef)auth);
+    CFDataRef serialized = CFHTTPMessageCopySerializedMessage(request);
+    _trackingRequest = [(NSData*)serialized mutableCopy];
+    CFRelease(serialized);
+    CFRelease(request);
+    LogTo(ChangeTracker, @"Request = \n%@", [_trackingRequest my_UTF8ToString]);
     
     /* Why are we using raw TCP streams rather than NSURLConnection? Good question.
         NSURLConnection seems to have some kind of bug with reading the output of _changes, maybe
@@ -61,7 +64,8 @@ enum {
         OS X 10.6.7, the delegate never receives any notification of a response. The workaround
         is to act as a dumb HTTP parser and do the job ourselves. */
     
-    int port = _databaseURL.port.unsignedShortValue ?: 80;
+    BOOL isSSL = (0 == [_databaseURL.scheme caseInsensitiveCompare: @"https"]);
+    int port = _databaseURL.port.unsignedShortValue ?: (isSSL ? 443 : 80);
 #if TARGET_OS_IPHONE
     CFReadStreamRef cfInputStream = NULL;
     CFWriteStreamRef cfOutputStream = NULL;
@@ -88,6 +92,21 @@ enum {
     _trackingOutput = [output retain];
 #endif
     
+    if (isSSL) {
+        // Enable SSL for this connection.
+        // Tell SecureTransport the hostname we need to find in the server cert.
+        // Also, disable TLS 1.2 support because it breaks compatibility with some SSL servers;
+        // workaround taken from Apple technote TN2287:
+        // http://developer.apple.com/library/ios/#technotes/tn2287/
+        [_trackingInput setProperty: NSStreamSocketSecurityLevelNegotiatedSSL
+                             forKey: NSStreamSocketSecurityLevelKey];
+        NSDictionary *settings = $dict({(id)kCFStreamSSLPeerName, _databaseURL.host},
+                                       {(id)kCFStreamSSLLevel,
+                                        @"kCFStreamSocketSecurityLevelTLSv1_0SSLv3"});
+        CFReadStreamSetProperty((CFReadStreamRef)_trackingInput,
+                                kCFStreamPropertySSLSettings, (CFTypeRef)settings);
+    }
+    
     _state = kStateStatus;
     _atEOF = _inputAvailable = _parsing = false;
     
@@ -103,6 +122,29 @@ enum {
 }
 
 
+static NSString* basicAuthString(NSString* username, NSString* password) {
+    if (!username || !password)
+        return nil;
+    NSString* auth = [NSString stringWithFormat: @"%@:%@", username, password];
+    auth = [TDBase64 encode: [auth dataUsingEncoding: NSUTF8StringEncoding]];
+    return [NSString stringWithFormat: @"Basic %@", auth];
+}
+
+
+- (NSString*) authorizationHeader {
+    NSString* auth = nil;
+    if ([_client respondsToSelector: @selector(authorizationHeader)])
+        auth = [_client authorizationHeader];
+    if (!auth)
+        auth = basicAuthString(_databaseURL.user, _databaseURL.password);
+    if (!auth) {
+        NSURLCredential* credential = self.authCredential;
+        auth = basicAuthString(credential.user, credential.password);
+    }
+    return auth;
+}
+
+
 - (void) clearConnection {
     [_trackingInput close];
     [_trackingInput release];
@@ -112,6 +154,8 @@ enum {
     [_trackingOutput release];
     _trackingOutput = nil;
     
+    [_trackingRequest release];
+    _trackingRequest = nil;
     [_inputBuffer release];
     _inputBuffer = nil;
     [_changeBuffer release];
@@ -135,6 +179,21 @@ enum {
     [self setUpstreamError: @"Unparseable change line"];
     [self stop];
     return NO;
+}
+
+
+- (BOOL) readServerResponse: (NSString*)line {
+    int status;
+    NSScanner* scanner = [NSScanner scannerWithString: line];
+    if (![scanner scanString: @"HTTP/1.1 " intoString: nil] ||
+            ![scanner scanInt: &status]) {
+        return [self failUnparseable: line];
+    }
+    if (status >= 300) {
+        self.error = TDStatusToNSError(status, self.changesFeedURL);
+        return NO;
+    }
+    return YES;
 }
 
 
@@ -167,7 +226,7 @@ enum {
     BOOL keepGoing = YES;
     while (keepGoing && pos < end && _inputBuffer) {
         const char* lineStart = pos;
-        const char* crlf = strnstr(pos, "\r\n", end-pos);
+        const char* crlf = memmem(pos, end-pos, "\r\n", 2);
         if (!crlf)
             break;  // Wait till we have a complete line
         ptrdiff_t lineLength = crlf - pos;
@@ -183,9 +242,10 @@ enum {
         switch (_state) {
             case kStateStatus: {
                 // Read the HTTP response status line:
-                if (![line hasPrefix: @"HTTP/1.1 200 "])
-                    [self failUnparseable: line];
-                _state = kStateHeaders;
+                if ([self readServerResponse: line])
+                    _state = kStateHeaders;
+                else
+                    [self stop];
                 break;
             }
             case kStateHeaders:
@@ -303,6 +363,7 @@ enum {
 
 
 - (void) errorOccurred: (NSError*)error {
+    LogTo(ChangeTracker, @"%@: ErrorOccurred: %@", self, error);
     if (++_retryCount <= kMaxRetries) {
         [self clearConnection];
         NSTimeInterval retryDelay = kInitialRetryDelay * (1 << (_retryCount-1));
@@ -315,19 +376,21 @@ enum {
 }
 
 
-- (void) stream: (NSInputStream*)stream handleEvent: (NSStreamEvent)eventCode {
+- (void) stream: (NSStream*)stream handleEvent: (NSStreamEvent)eventCode {
     [[self retain] autorelease];  // Delegate calling -stop might otherwise dealloc me
+    
     switch (eventCode) {
         case NSStreamEventHasSpaceAvailable: {
             LogTo(ChangeTracker, @"%@: HasSpaceAvailable %@", self, stream);
             if (_trackingRequest) {
-                const char* buffer = [_trackingRequest UTF8String];
-                NSUInteger written = [(NSOutputStream*)stream write: (void*)buffer maxLength: strlen(buffer)];
-                NSAssert(written == strlen(buffer), @"Output stream didn't write entire request");
-                // FIX: It's unlikely but possible that the stream won't take the entire request; need to
-                // write the rest later.
-                [_trackingRequest release];
-                _trackingRequest = nil;
+                NSInteger written = [(NSOutputStream*)stream write: _trackingRequest.bytes
+                                                         maxLength: _trackingRequest.length];
+                if (written >= (NSInteger)_trackingRequest.length) {
+                    setObj(&_trackingRequest, nil);
+                } else if (written > 0) {
+                    [_trackingRequest replaceBytesInRange: NSMakeRange(0, written)
+                                                withBytes: NULL length: 0];
+                }
             }
             break;
         }
@@ -342,11 +405,14 @@ enum {
         case NSStreamEventEndEncountered:
             LogTo(ChangeTracker, @"%@: EndEncountered %@", self, stream);
             _atEOF = true;
-            if (!_parsing)
+            if (_state < kStateChunks || _mode == kContinuous || _inputBuffer.length > 0)
+                [self errorOccurred: [NSError errorWithDomain: NSURLErrorDomain
+                                                         code: NSURLErrorNetworkConnectionLost
+                                                     userInfo: nil]];
+            else if (!_parsing)
                 [self stop];
             break;
         case NSStreamEventErrorOccurred:
-            LogTo(ChangeTracker, @"%@: ErrorOccurred %@: %@", self, stream, stream.streamError);
             [self errorOccurred: stream.streamError];
             break;
             

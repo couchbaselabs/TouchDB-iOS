@@ -136,7 +136,7 @@ static NSString* toJSONString( id object ) {
         return nil;
     return [TDJSON stringWithJSONObject: object
                                 options: TDJSONWritingAllowFragments
-                                  error: nil];
+                                  error: NULL];
 }
 
 
@@ -145,7 +145,7 @@ static id fromJSON( NSData* json ) {
         return nil;
     return [TDJSON JSONObjectWithData: json 
                               options: TDJSONReadingAllowFragments
-                                error: nil];
+                                error: NULL];
 }
 
 

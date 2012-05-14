@@ -14,9 +14,10 @@
 //  and limitations under the License.
 
 #import "TDDatabaseManager.h"
-#import "TDDatabase.h"
+#import <TouchDB/TDDatabase.h>
 #import "TDReplicatorManager.h"
 #import "TDInternal.h"
+#import "TDMisc.h"
 
 
 @implementation TDDatabaseManager
@@ -38,7 +39,7 @@ static NSCharacterSet* kIllegalNameChars;
 
 #if DEBUG
 + (TDDatabaseManager*) createEmptyAtPath: (NSString*)path {
-    [[NSFileManager defaultManager] removeItemAtPath: path error: nil];
+    [[NSFileManager defaultManager] removeItemAtPath: path error: NULL];
     NSError* error;
     TDDatabaseManager* dbm = [[self alloc] initWithDirectory: path error: &error];
     Assert(dbm, @"Failed to create db manager at %@: %@", path, error);
@@ -65,8 +66,7 @@ static NSCharacterSet* kIllegalNameChars;
                                        withIntermediateDirectories: NO
                                                         attributes: nil
                                                              error: &error]) {
-            if (!$equal(error.domain, NSCocoaErrorDomain)
-                        || error.code != NSFileWriteFileExistsError) {
+            if (!TDIsFileExistsError(error)) {
                 if (outError) *outError = error;
                 [self release];
                 return nil;
@@ -151,7 +151,7 @@ static NSCharacterSet* kIllegalNameChars;
 
 
 - (NSArray*) allDatabaseNames {
-    NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath: _dir error: nil];
+    NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath: _dir error: NULL];
     files = [files pathsMatchingExtensions: $array(kDBExtension)];
     return [files my_map: ^(id filename) {
         return [[filename stringByDeletingPathExtension]

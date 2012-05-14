@@ -57,7 +57,7 @@
 - (BOOL) isValidJSON {
     // Yes, this is just like asObject except it doesn't warn.
     if (!_object && !_error) {
-        _object = [[TDJSON JSONObjectWithData: _json options: 0 error: nil] copy];
+        _object = [[TDJSON JSONObjectWithData: _json options: 0 error: NULL] copy];
         if (!_object) {
             _error = YES;
         }
@@ -67,7 +67,7 @@
 
 - (NSData*) asJSON {
     if (!_json && !_error) {
-        _json = [[TDJSON dataWithJSONObject: _object options: 0 error: nil] copy];
+        _json = [[TDJSON dataWithJSONObject: _object options: 0 error: NULL] copy];
         if (!_json) {
             Warn(@"TDBody: couldn't convert to JSON");
             _error = YES;
@@ -81,7 +81,7 @@
     if (props) {
         NSData* json = [TDJSON dataWithJSONObject: props
                                           options: TDJSONWritingPrettyPrinted
-                                            error: nil];
+                                            error: NULL];
         if (json) {
             NSMutableData* mjson = [[json mutableCopy] autorelease];
             [mjson appendBytes: "\n" length: 1];

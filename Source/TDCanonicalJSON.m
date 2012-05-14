@@ -14,6 +14,7 @@
 //  and limitations under the License.
 
 #import "TDCanonicalJSON.h"
+#import <math.h>
 
 
 @interface TDCanonicalJSON ()
@@ -48,7 +49,7 @@
 - (void) encodeString: (NSString*)string {
     static NSCharacterSet* kCharsToQuote;
     if (!kCharsToQuote) {
-        NSMutableCharacterSet* chars = [NSMutableCharacterSet characterSetWithRange: NSMakeRange(0, 32)];
+        NSMutableCharacterSet* chars = (id)[NSMutableCharacterSet characterSetWithRange: NSMakeRange(0, 32)];
         [chars addCharactersInString: @"\"\\"];
         kCharsToQuote = [chars copy];
     }
@@ -140,8 +141,8 @@ static NSComparisonResult compareCanonStrings( id s1, id s2, void *context) {
     NSArray* keys = [[dict allKeys] sortedArrayUsingFunction: &compareCanonStrings context: NULL];
     BOOL first = YES;
     for (NSString* key in keys) {
-        NSAssert([key isKindOfClass: [NSString class]], @"Can't encode %@ as dict key in JSON",
-                 [key class]);
+        Assert([key isKindOfClass: [NSString class]], @"Can't encode %@ as dict key in JSON",
+               [key class]);
         if (_ignoreKeyPrefix && [key hasPrefix: _ignoreKeyPrefix] 
                 && ![_whitelistedKeys containsObject: key])
             continue;
@@ -169,7 +170,7 @@ static NSComparisonResult compareCanonStrings( id s1, id s2, void *context) {
     } else if ([object isKindOfClass: [NSArray class]]) {
         [self encodeArray: object];
     } else {
-        NSAssert(NO, @"Can't encode instances of %@ as JSON", [object class]);
+        Assert(NO, @"Can't encode instances of %@ as JSON", [object class]);
     }
 }
 
@@ -258,7 +259,7 @@ TestCase(TDCanonicalJSON_RoundTrip) {
     roundtripFloat(UINT_MAX);
     roundtripFloat(UINT64_MAX);
     roundtripFloat(UINT_MAX + 0.01);
-    roundtripFloat(MAXFLOAT);
+    roundtripFloat(1.0e38);
     
     roundtrip(@"");
     roundtrip(@"ordinary string");

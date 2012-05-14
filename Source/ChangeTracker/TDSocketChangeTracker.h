@@ -15,7 +15,7 @@
     @private
     NSInputStream* _trackingInput;
     NSOutputStream* _trackingOutput;
-    NSString* _trackingRequest;
+    NSMutableData* _trackingRequest;
     int _retryCount;
     
     NSMutableData* _inputBuffer;

@@ -37,7 +37,7 @@
         object = [[NSArray alloc] initWithObjects: &object count: 1];
         NSData* json = [super dataWithJSONObject: object 
                                          options: (options & ~TDJSONWritingAllowFragments)
-                                           error: nil];
+                                           error: NULL];
         [object release];
         return [json subdataWithRange: NSMakeRange(1, json.length - 2)];
     } else {
@@ -85,7 +85,7 @@
 {
     if (!dict.count)
         return json;
-    NSData* extraJson = [self dataWithJSONObject: dict options: 0 error: nil];
+    NSData* extraJson = [self dataWithJSONObject: dict options: 0 error: NULL];
     if (!extraJson)
         return nil;
     size_t jsonLength = json.length;

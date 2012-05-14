@@ -199,7 +199,7 @@
 - (BOOL) parseJSONBuffer {
     id document = [TDJSON JSONObjectWithData: _jsonBuffer
                                      options: TDJSONReadingMutableContainers
-                                       error: nil];
+                                       error: NULL];
     setObj(&_jsonBuffer, nil);
     if (![document isKindOfClass: [NSDictionary class]]) {
         Warn(@"%@: received unparseable JSON data '%@'",

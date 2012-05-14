@@ -15,11 +15,13 @@
 
 #import "TDRemoteRequest.h"
 #import "TDMisc.h"
-#import "TDMultipartReader.h"
 #import "TDBlobStore.h"
-#import "TDDatabase.h"
+#import <TouchDB/TDDatabase.h>
 #import "TDRouter.h"
 #import "TDReplicator.h"
+#import "CollectionUtils.h"
+#import "Logging.h"
+#import "Test.h"
 
 
 // Max number of retry attempts for a transient failure
@@ -35,7 +37,6 @@
 {
     self = [super init];
     if (self) {
-        LogTo(RemoteRequest, @"%@: Starting...", self);
         _onCompletion = [onCompletion copy];
         _request = [[NSMutableURLRequest alloc] initWithURL: url];
         _request.HTTPMethod = method;
@@ -43,6 +44,7 @@
         [_request setValue: $sprintf(@"TouchDB/%@", [TDRouter versionString])
                   forHTTPHeaderField:@"User-Agent"];
         
+        LogTo(RemoteRequest, @"%@: Starting...", self);
         [self setupRequest: _request withBody: body];
         
         NSString* authHeader = [authorizer authorizeURLRequest: _request];
@@ -67,15 +69,22 @@
 - (void) start {
     Assert(!_connection);
     _connection = [[NSURLConnection connectionWithRequest: _request delegate: self] retain];
-    [_connection start];
+    // Retaining myself shouldn't be necessary, because NSURLConnection is documented as retaining
+    // its delegate while it's running. But GNUstep doesn't (currently) do this, so for
+    // compatibility I retain myself until the connection completes (see -clearConnection.)
+    // TEMP: Remove this and the [self autorelease] below when I get the fix from GNUstep.
+    [self retain];
 }
 
 
 - (void) clearConnection {
     [_request release];
     _request = nil;
-    [_connection autorelease];
-    _connection = nil;
+    if (_connection) {
+        [_connection autorelease];
+        _connection = nil;
+        [self autorelease];  // balances [self retain] in -start method
+    }
 }
 
 
@@ -93,7 +102,6 @@
 
 - (void) respondWithResult: (id)result error: (NSError*)error {
     Assert(result || error);
-    LogTo(RemoteRequest, @"%@: Calling completion block...", self);
     _onCompletion(result, error);
 }
 
@@ -119,6 +127,13 @@
 #pragma mark - NSURLCONNECTION DELEGATE:
 
 
+- (void)connection:(NSURLConnection *)connection
+        willSendRequestForAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
+{
+    LogTo(RemoteRequest, @"Got challenge: %@", challenge);
+    [challenge.sender performDefaultHandlingForAuthenticationChallenge: challenge];
+}
+
 - (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
     int status = (int) ((NSHTTPURLResponse*)response).statusCode;
     LogTo(RemoteRequest, @"%@: Got response, status %d", self, status);
@@ -140,6 +155,7 @@
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    LogTo(RemoteRequest, @"%@: Finished loading", self);
     [self clearConnection];
     [self respondWithResult: self error: nil];
 }
@@ -160,7 +176,7 @@
 - (void) setupRequest: (NSMutableURLRequest*)request withBody: (id)body {
     [request setValue: @"application/json" forHTTPHeaderField: @"Accept"];
     if (body) {
-        request.HTTPBody = [TDJSON dataWithJSONObject: body options: 0 error: nil];
+        request.HTTPBody = [TDJSON dataWithJSONObject: body options: 0 error: NULL];
         [request addValue: @"application/json" forHTTPHeaderField: @"Content-Type"];
     }
 }
@@ -179,9 +195,10 @@
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
+    LogTo(RemoteRequest, @"%@: Finished loading", self);
     id result = nil;
     if (_jsonBuffer)
-        result = [TDJSON JSONObjectWithData: _jsonBuffer options: 0 error:nil];
+        result = [TDJSON JSONObjectWithData: _jsonBuffer options: 0 error: NULL];
     NSError* error = nil;
     if (!result) {
         Warn(@"%@: %@ %@ returned unparseable data '%@'",

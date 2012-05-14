@@ -15,16 +15,22 @@
 
 #import "TDDatabase+Insertion.h"
 #import "TDDatabase+Attachments.h"
-#import "TDRevision.h"
+#import <TouchDB/TDRevision.h>
 #import "TDCanonicalJSON.h"
 #import "TDAttachment.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
+#import "Test.h"
 
 #import "FMDatabase.h"
 #import "FMDatabaseAdditions.h"
 
+#ifdef GNUSTEP
+#import <openssl/sha.h>
+#else
+#define COMMON_DIGEST_FOR_OPENSSL
 #import <CommonCrypto/CommonDigest.h>
+#endif
 
 
 NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
@@ -87,30 +93,30 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
     // Generate a digest for this revision based on the previous revision ID, document JSON,
     // and attachment digests. This doesn't need to be secure; we just need to ensure that this
     // code consistently generates the same ID given equivalent revisions.
-    CC_MD5_CTX ctx;
-    unsigned char digestBytes[CC_MD5_DIGEST_LENGTH];
-    CC_MD5_Init(&ctx);
+    MD5_CTX ctx;
+    unsigned char digestBytes[MD5_DIGEST_LENGTH];
+    MD5_Init(&ctx);
     
     NSData* prevIDUTF8 = [prevID dataUsingEncoding: NSUTF8StringEncoding];
     NSUInteger length = prevIDUTF8.length;
     if (length > 0xFF)
         return nil;
     uint8_t lengthByte = length & 0xFF;
-    CC_MD5_Update(&ctx, &lengthByte, 1);       // prefix with length byte
+    MD5_Update(&ctx, &lengthByte, 1);       // prefix with length byte
     if (length > 0)
-        CC_MD5_Update(&ctx, prevIDUTF8.bytes, (CC_LONG)length);
+        MD5_Update(&ctx, prevIDUTF8.bytes, length);
     
     uint8_t deletedByte = rev.deleted != NO;
-    CC_MD5_Update(&ctx, &deletedByte, 1);
+    MD5_Update(&ctx, &deletedByte, 1);
     
     for (NSString* attName in [attachments.allKeys sortedArrayUsingSelector: @selector(compare:)]) {
         TDAttachment* attachment = [attachments objectForKey: attName];
-        CC_MD5_Update(&ctx, &attachment->blobKey, sizeof(attachment->blobKey));
+        MD5_Update(&ctx, &attachment->blobKey, sizeof(attachment->blobKey));
     }
     
-    CC_MD5_Update(&ctx, json.bytes, (CC_LONG)json.length);
+    MD5_Update(&ctx, json.bytes, json.length);
         
-    CC_MD5_Final(digestBytes, &ctx);
+    MD5_Final(digestBytes, &ctx);
     NSString* digest = TDHexFromBytes(digestBytes, sizeof(digestBytes));
     return [NSString stringWithFormat: @"%u-%@", generation+1, digest];
 }
@@ -228,6 +234,7 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
               allowConflict: (BOOL)allowConflict
                      status: (TDStatus*)outStatus
 {
+    LogTo(TDDatabase, @"PUT rev=%@, prevRevID=%@, allowConflict=%d", rev, prevRevID, allowConflict);
     Assert(outStatus);
     NSString* docID = rev.docID;
     BOOL deleted = rev.deleted;

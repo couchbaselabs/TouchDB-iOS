@@ -132,7 +132,7 @@ static int compareStringsASCII(const char** in1, const char** in2) {
 }
 
 
-static CFStringRef createCFStringFromJSON(const char** in) {
+static NSString* createStringFromJSON(const char** in) {
     // Scan the JSON string to find its end and whether it contains escapes:
     const char* start = ++*in;
     unsigned escapes = 0;
@@ -150,7 +150,7 @@ static CFStringRef createCFStringFromJSON(const char** in) {
     *in = str + 1;
     size_t length = str - start;
     
-    CFAllocatorRef deallocator;
+    BOOL freeWhenDone = NO;
     if (escapes > 0) {
         length -= escapes;
         char* buf = malloc(length);
@@ -163,23 +163,24 @@ static CFStringRef createCFStringFromJSON(const char** in) {
         }
         CAssertEq(dst-buf, (int)length);
         start = buf;
-        deallocator = NULL;  // means "use system deallocator", i.e. free()
-    } else {
-        deallocator = kCFAllocatorNull;
+        freeWhenDone = YES;
     }
-    CFStringRef cfstr =  CFStringCreateWithBytesNoCopy(NULL, (const UInt8*)start, length,
-                                                       kCFStringEncodingUTF8, NO, deallocator);
-    CAssert(cfstr != NULL, @"Failed to convert to string: start=%p, length=%u", start, length);
-    return cfstr;
+    
+    NSString* nsstr = [[NSString alloc] initWithBytesNoCopy: (void*)start
+                                                     length: length
+                                                   encoding: NSUTF8StringEncoding
+                                               freeWhenDone: freeWhenDone];
+    CAssert(nsstr != nil, @"Failed to convert to string: start=%p, length=%u", start, length);
+    return nsstr;
 }
 
 
 static int compareStringsUnicode(const char** in1, const char** in2) {
-    CFStringRef str1 = createCFStringFromJSON(in1);
-    CFStringRef str2 = createCFStringFromJSON(in2);
-    int result = (int) CFStringCompare(str1, str2, kCFCompareAnchored | kCFCompareLocalized);
-    CFRelease(str1);
-    CFRelease(str2);
+    NSString* str1 = createStringFromJSON(in1);
+    NSString* str2 = createStringFromJSON(in2);
+    int result = (int)[str1 localizedCompare: str2];
+    [str1 release];
+    [str2 release];
     return result;
 }
 
@@ -265,7 +266,7 @@ int TDCollateJSON(void *context,
 // encodes an object to a C string in JSON format. JSON fragments are allowed.
 static const char* encode(id obj) {
     NSString* str = [TDJSON stringWithJSONObject: obj
-                                         options: TDJSONWritingAllowFragments error: nil];
+                                         options: TDJSONWritingAllowFragments error: NULL];
     CAssert(str);
     return [str UTF8String];
 }
@@ -299,9 +300,11 @@ TestCase(TDCollateScalars) {
     CAssertEq(TDCollateJSON(mode, 0, "\"12\\/34\"", 0, "\"12/34\""), 0);
     CAssertEq(TDCollateJSON(mode, 0, "\"\\/1234\"", 0, "\"/1234\""), 0);
     CAssertEq(TDCollateJSON(mode, 0, "\"1234\\/\"", 0, "\"1234/\""), 0);
+#ifndef GNUSTEP     // FIXME: GNUstep doesn't support Unicode collation yet
     CAssertEq(TDCollateJSON(mode, 0, "\"a\"", 0, "\"A\""), -1);
     CAssertEq(TDCollateJSON(mode, 0, "\"A\"", 0, "\"aa\""), -1);
     CAssertEq(TDCollateJSON(mode, 0, "\"B\"", 0, "\"aa\""), 1);
+#endif
 }
 
 TestCase(TDCollateASCII) {

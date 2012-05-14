@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDRouter.h"
-#import "TDDatabase.h"
+#import <TouchDB/TDDatabase.h>
 #import "TDBody.h"
 #import "TDServer.h"
 #import "TDBase64.h"
@@ -509,7 +509,7 @@ TestCase(TDRouter_PutMultipart) {
                               "Content-Type: text/plain\r\n\r\n"
                               "%@"
                               "\r\n--BOUNDARY--",
-                              [TDJSON stringWithJSONObject: props options: 0 error: nil],
+                              [TDJSON stringWithJSONObject: props options: 0 error: NULL],
                               attachmentString);
     
     TDResponse* response = SendRequest(server, @"PUT", @"/db/doc",

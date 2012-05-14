@@ -14,14 +14,14 @@
 //  and limitations under the License.
 
 
-#import "TDDatabase.h"
+#import <TouchDB/TDDatabase.h>
 #import "TDDatabase+Attachments.h"
 #import "TDDatabase+Insertion.h"
 #import "TDDatabase+LocalDocs.h"
 #import "TDDatabase+Replication.h"
 #import "TDAttachment.h"
 #import "TDBody.h"
-#import "TDRevision.h"
+#import <TouchDB/TDRevision.h>
 #import "TDBlobStore.h"
 #import "TDBase64.h"
 #import "TDInternal.h"
@@ -75,6 +75,7 @@ TestCase(TDDatabase_CRUD) {
     NSMutableDictionary* props = $mdict({@"foo", $object(1)}, {@"bar", $false});
     TDBody* doc = [[[TDBody alloc] initWithProperties: props] autorelease];
     TDRevision* rev1 = [[[TDRevision alloc] initWithBody: doc] autorelease];
+    CAssert(rev1);
     TDStatus status;
     rev1 = [db putRevision: rev1 prevRevisionID: nil allowConflict: NO status: &status];
     CAssertEq(status, kTDStatusCreated);
@@ -155,7 +156,7 @@ TestCase(TDDatabase_CRUD) {
 
 
 TestCase(TDDatabase_EmptyDoc) {
-    // Test case for issue #44, which is caused by a bug in NSJSONSerialization.
+    // Test case for issue #44, which is caused by a bug in TDJSON.
     TDDatabase* db = createDB();
     TDRevision* rev = putDoc(db, $dict());
     TDQueryOptions options = kDefaultTDQueryOptions;
