@@ -23,6 +23,10 @@
 		270B3E2B1489581E00E0A926 /* TDPuller.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E291489581E00E0A926 /* TDPuller.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		270B3E3914898DF200E0A926 /* TDRevision.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E3714898DF200E0A926 /* TDRevision.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		270B3E3E148D7F0000E0A926 /* TDPusher.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E3C148D7F0000E0A926 /* TDPusher.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		270BDD361563338B007D52F6 /* MYURLUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 270BDD341563338B007D52F6 /* MYURLUtils.h */; };
+		270BDD371563338B007D52F6 /* MYURLUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 270BDD341563338B007D52F6 /* MYURLUtils.h */; };
+		270BDD381563338B007D52F6 /* MYURLUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 270BDD351563338B007D52F6 /* MYURLUtils.m */; };
+		270BDD391563338B007D52F6 /* MYURLUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 270BDD351563338B007D52F6 /* MYURLUtils.m */; };
 		270FE0CA14C5008C005FF647 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27F0745C11CD50A600E9A2AB /* Foundation.framework */; };
 		270FE0D514C50134005FF647 /* TouchDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270B3DEA1489359000E0A926 /* TouchDB.framework */; };
 		270FE0D614C50134005FF647 /* TouchDBListener.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 275315D514ACF0A10065964D /* TouchDBListener.framework */; };
@@ -380,6 +384,8 @@
 		270B3E3814898DF200E0A926 /* TDRevision.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDRevision.m; sourceTree = "<group>"; };
 		270B3E3C148D7F0000E0A926 /* TDPusher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDPusher.h; sourceTree = "<group>"; };
 		270B3E3D148D7F0000E0A926 /* TDPusher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDPusher.m; sourceTree = "<group>"; };
+		270BDD341563338B007D52F6 /* MYURLUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MYURLUtils.h; sourceTree = "<group>"; };
+		270BDD351563338B007D52F6 /* MYURLUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MYURLUtils.m; sourceTree = "<group>"; };
 		270FE0C814C5008C005FF647 /* TouchServ */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TouchServ; sourceTree = BUILT_PRODUCTS_DIR; };
 		27103F8114E9CE4400DF7209 /* TDReachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDReachability.h; sourceTree = "<group>"; };
 		27103F8214E9CE4400DF7209 /* TDReachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDReachability.m; sourceTree = "<group>"; };
@@ -695,7 +701,6 @@
 		08FB7794FE84155DC02AAC07 /* CouchLite */ = {
 			isa = PBXGroup;
 			children = (
-				278E4DC615619FC400DDCEF9 /* CFNetwork.framework */,
 				270B3E28148940C000E0A926 /* README.md */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				275315D714ACF0A20065964D /* Listener */,
@@ -988,6 +993,7 @@
 		27C70696148864BA00F0F099 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				278E4DC615619FC400DDCEF9 /* CFNetwork.framework */,
 				27C7066F1488634300F0F099 /* AppKit.framework */,
 				27F0745C11CD50A600E9A2AB /* Foundation.framework */,
 				27C70697148864BA00F0F099 /* Cocoa.framework */,
@@ -1065,6 +1071,8 @@
 				279CE3B714D4A885009F3FA6 /* MYBlockUtils.m */,
 				27108CDE15128EA500E5B92C /* MYURLHandler.h */,
 				27108CDF15128EA500E5B92C /* MYURLHandler.m */,
+				270BDD341563338B007D52F6 /* MYURLUtils.h */,
+				270BDD351563338B007D52F6 /* MYURLUtils.m */,
 			);
 			path = MYUtilities;
 			sourceTree = "<group>";
@@ -1194,6 +1202,7 @@
 				27F0C7801533BDD8004EBA89 /* TDAttachment.h in Headers */,
 				27F0C7841533BDD8004EBA89 /* TDCanonicalJSON.h in Headers */,
 				27F0C7881533BDD8004EBA89 /* TDStatus.h in Headers */,
+				270BDD371563338B007D52F6 /* MYURLUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1213,6 +1222,7 @@
 				27F0C77F1533BDD8004EBA89 /* TDAttachment.h in Headers */,
 				27F0C7831533BDD8004EBA89 /* TDCanonicalJSON.h in Headers */,
 				27F0C7871533BDD8004EBA89 /* TDStatus.h in Headers */,
+				270BDD361563338B007D52F6 /* MYURLUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1726,6 +1736,7 @@
 				27F0C7821533BDD8004EBA89 /* TDAttachment.m in Sources */,
 				27F0C7861533BDD8004EBA89 /* TDCanonicalJSON.m in Sources */,
 				27F0C78A1533BDD8004EBA89 /* TDStatus.m in Sources */,
+				270BDD391563338B007D52F6 /* MYURLUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1795,6 +1806,7 @@
 				27F0C7811533BDD8004EBA89 /* TDAttachment.m in Sources */,
 				27F0C7851533BDD8004EBA89 /* TDCanonicalJSON.m in Sources */,
 				27F0C7891533BDD8004EBA89 /* TDStatus.m in Sources */,
+				270BDD381563338B007D52F6 /* MYURLUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -21,7 +21,6 @@
 - (void) changeTrackerReceivedChange: (NSDictionary*)change;
 @optional
 - (NSString*) authorizationHeader;
-- (NSURLCredential*) authCredential;
 - (void) changeTrackerStopped: (TDChangeTracker*)tracker;
 @end
 
@@ -45,6 +44,7 @@ typedef enum TDChangeTrackerMode {
     BOOL _includeConflicts;
     NSString* _filterName;
     NSDictionary* _filterParameters;
+    NSTimeInterval _heartbeat;
 }
 
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
@@ -63,12 +63,12 @@ typedef enum TDChangeTrackerMode {
 
 @property (copy) NSString* filterName;
 @property (copy) NSDictionary* filterParameters;
+@property (nonatomic) NSTimeInterval heartbeat;
 
 - (BOOL) start;
 - (void) stop;
 
 // Protected
-@property (readonly) NSURLCredential* authCredential;
 @property (readonly) NSString* changesFeedPath;
 - (void) setUpstreamError: (NSString*)message;
 - (BOOL) receivedChange: (NSDictionary*)change;

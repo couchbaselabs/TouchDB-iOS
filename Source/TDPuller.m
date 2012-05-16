@@ -79,16 +79,26 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     
     [_pendingSequences release];
     _pendingSequences = [[TDSequenceMap alloc] init];
+    
+    // Default to continuous mode because it lets us parse and process changes one sequence at a
+    // time, instead of having to wait and parse the entire list as one JSON object. But allow
+    // the client to force longpoll mode, since apparently some cell networks have trouble with
+    // the continuous feed (see <https://github.com/couchbaselabs/TouchDB-iOS/issues/72>)
+    TDChangeTrackerMode mode = kContinuous;
+    if ([[_options objectForKey: @"feed"] isEqual: @"longpoll"])
+        mode = kLongPoll;
+    
     LogTo(SyncVerbose, @"%@ starting ChangeTracker with since=%@", self, _lastSequence);
-    // Always use continuous mode because it lets us parse and process changes one sequence at a
-    // time, instead of having to wait and parse the entire list as one JSON object.
     _changeTracker = [[TDChangeTracker alloc] initWithDatabaseURL: _remote
-                                                             mode: kContinuous
+                                                             mode: mode
                                                         conflicts: YES
                                                      lastSequence: _lastSequence
                                                            client: self];
     _changeTracker.filterName = _filterName;
     _changeTracker.filterParameters = _filterParameters;
+    unsigned heartbeat = $castIf(NSNumber, [_options objectForKey: @"heartbeat"]).unsignedIntValue;
+    if (heartbeat >= 15000)
+        _changeTracker.heartbeat = heartbeat;
     [_changeTracker start];
     if (!_continuous)
         [self asyncTaskStarted];
@@ -131,29 +141,6 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     NSURL* url = _changeTracker.changesFeedURL;
     NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL: url];
     return [_authorizer authorizeURLRequest: request];
-}
-
-
-// TDChangeTrackerClient protocol
-- (NSURLCredential*) authCredential {
-    if (_authorizer)
-        return nil;
-    // It's unclear what value to use for 'realm' since we don't already have a challenge from
-    // the server. In practice, nil doesn't work (won't find existing Keychain passwords) while
-    // using the hostname does.
-    NSURL* url = _changeTracker.changesFeedURL;
-    NSURLProtectionSpace* space = [[[NSURLProtectionSpace alloc]
-                                                    initWithHost: url.host
-                                                            port: url.port.intValue
-                                                        protocol: NSURLProtectionSpaceHTTP
-                                                           realm: url.host
-                                            authenticationMethod: NSURLAuthenticationMethodDefault]
-                                   autorelease];
-    NSURLCredential* cred = [[NSURLCredentialStorage sharedCredentialStorage]
-                                                        defaultCredentialForProtectionSpace: space];
-    if (cred)
-        LogTo(Sync, @"%@ Using credential %@", self, cred);
-    return cred;
 }
 
 
