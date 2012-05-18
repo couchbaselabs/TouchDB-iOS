@@ -60,6 +60,7 @@ typedef enum TDChangeTrackerMode {
 @property (readonly, copy, nonatomic) id lastSequenceID;
 @property (retain, nonatomic) NSError* error;
 @property (assign, nonatomic) id<TDChangeTrackerClient> client;
+@property (retain, nonatomic) NSDictionary *requestHeaders;
 
 @property (copy) NSString* filterName;
 @property (copy) NSDictionary* filterParameters;

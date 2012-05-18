@@ -315,6 +315,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     [[[TDMultipartDownloader alloc] initWithURL: [NSURL URLWithString: urlStr]
                                        database: _db
                                      authorizer: _authorizer
+                                 requestHeaders: self.requestHeaders
                                    onCompletion:
         ^(TDMultipartDownloader* download, NSError *error) {
             // OK, now we've got the response revision:
