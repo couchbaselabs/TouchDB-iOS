@@ -49,6 +49,15 @@ enum {
                                                           kCFHTTPVersion1_1);
     Assert(request);
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Host"), (CFStringRef)_databaseURL.host);
+    
+    // Add headers.
+    if ([_client respondsToSelector:@selector(authorizationHeader)]) {
+        CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Authorization"), (CFStringRef)[_client authorizationHeader]);
+    }
+    [self.requestHeaders enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+        CFHTTPMessageSetHeaderFieldValue(request, (CFStringRef)key, (CFStringRef)value);
+    }];
+    
     if (_unauthResponse && _credential) {
         CFIndex unauthStatus = CFHTTPMessageGetResponseStatusCode(_unauthResponse);
         Assert(CFHTTPMessageAddAuthentication(request, _unauthResponse,

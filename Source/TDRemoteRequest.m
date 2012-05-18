@@ -31,8 +31,11 @@
 @implementation TDRemoteRequest
 
 
-- (id) initWithMethod: (NSString*)method URL: (NSURL*)url body: (id)body
+- (id) initWithMethod: (NSString*)method 
+                  URL: (NSURL*)url 
+                 body: (id)body
            authorizer: (id<TDAuthorizer>)authorizer
+       requestHeaders:(NSDictionary *) requestHeaders
          onCompletion: (TDRemoteRequestCompletionBlock)onCompletion
 {
     self = [super init];
@@ -43,6 +46,11 @@
         _request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
         [_request setValue: $sprintf(@"TouchDB/%@", [TDRouter versionString])
                   forHTTPHeaderField:@"User-Agent"];
+        
+        // Add headers.
+        [requestHeaders enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+            [_request addValue:value forHTTPHeaderField:key];
+        }];
         
         LogTo(RemoteRequest, @"%@: Starting...", self);
         [self setupRequest: _request withBody: body];
