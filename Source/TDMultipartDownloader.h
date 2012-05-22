@@ -11,7 +11,8 @@
 
 
 /** Downloads a remote CouchDB document in multipart format.
-    Attachments are added to the database, but the document body isn't. */
+    Attachments are added to the database, but the document body isn't.
+    This is mostly just glue between NSURLConnection and TDMultipartDocumentReader. */
 @interface TDMultipartDownloader : TDRemoteRequest
 {
     @private

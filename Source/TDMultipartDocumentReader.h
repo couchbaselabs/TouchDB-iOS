@@ -11,6 +11,10 @@
 @class TDDatabase, TDRevision, TDBlobStoreWriter;
 
 
+/** Reads incoming MIME bodies from a TDMultipartReader and interprets them as CouchDB documents.
+    The document body is stored in the .document property, and attachments are saved to the
+    attachment store using a TDBlobStoreWriter.
+    This is mostly used internally by TDMultipartDownloader. */
 @interface TDMultipartDocumentReader : NSObject <TDMultipartReaderDelegate>
 {
     @private
