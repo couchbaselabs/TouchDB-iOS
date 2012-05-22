@@ -42,6 +42,7 @@ extern NSString* TDReplicatorStoppedNotification;
     CFAbsoluteTime _startTime;
     id<TDAuthorizer> _authorizer;
     NSDictionary* _options;
+    NSDictionary* _requestHeaders;
 }
 
 - (id) initWithDB: (TDDatabase*)db
@@ -56,6 +57,10 @@ extern NSString* TDReplicatorStoppedNotification;
 @property (copy) NSString* filterName;
 @property (copy) NSDictionary* filterParameters;
 @property (copy) NSDictionary* options;
+
+/** Optional dictionary of headers to be added to all requests to remote servers. */
+@property (copy) NSDictionary* requestHeaders;
+
 @property (retain) id<TDAuthorizer> authorizer;
 
 /** Starts the replicator.
@@ -91,30 +96,5 @@ extern NSString* TDReplicatorStoppedNotification;
 /** Approximate total number of changes to transfer.
     This is only an estimate and its value will change during replication. It starts at zero and returns to zero when replication stops. */
 @property (readonly, nonatomic) NSUInteger changesTotal;
-
-@end
-
-
-
-/** Protocol for adding authorization to HTTP requests sent by a TDReplicator. */
-@protocol TDAuthorizer <NSObject>
-
-/** Should generate and return an authorization string for the given request.
-    The string, if non-nil, will be set as the value of the "Authorization:" HTTP header. */
-- (NSString*) authorizeURLRequest: (NSMutableURLRequest*)request;
-
-@end
-
-
-
-/** Simple implementation of TDAuthorizer that does HTTP Basic Auth. */
-@interface TDBasicAuthorizer : NSObject <TDAuthorizer>
-{
-    @private
-    NSURLCredential* _credential;
-}
-
-/** Initialize given a credential object that contains a username and password. */
-- (id) initWithCredential: (NSURLCredential*)credential;
 
 @end

@@ -63,11 +63,15 @@
     TDDatabase* db;
     NSURL* remote;
     BOOL push, createTarget;
+    NSDictionary* headers;
+    id<TDAuthorizer> authorizer;
     NSDictionary* body = self.bodyAsDictionary;
     TDStatus status = [_dbManager.replicatorManager parseReplicatorProperties: body
-                                                                toDatabase: &db remote: &remote
-                                                                    isPush: &push
-                                                              createTarget: &createTarget];
+                                                                   toDatabase: &db remote: &remote
+                                                                       isPush: &push
+                                                                 createTarget: &createTarget
+                                                                      headers: &headers
+                                                                   authorizer: &authorizer];
     if (TDStatusIsError(status))
         return status;
     
@@ -81,6 +85,8 @@
         repl.filterName = $castIf(NSString, [body objectForKey: @"filter"]);;
         repl.filterParameters = $castIf(NSDictionary, [body objectForKey: @"query_params"]);
         repl.options = body;
+        repl.requestHeaders = headers;
+        repl.authorizer = authorizer;
         if (push)
             ((TDPusher*)repl).createTarget = createTarget;
         [repl start];

@@ -48,14 +48,28 @@ enum {
                                                           (CFURLRef)self.changesFeedURL,
                                                           kCFHTTPVersion1_1);
     Assert(request);
-    CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Host"), (CFStringRef)_databaseURL.host);
+    NSString* hostHeader = _databaseURL.host;
+    if (_databaseURL.port)
+        hostHeader = [hostHeader stringByAppendingFormat: @":%@", _databaseURL.port];
+    CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Host"), (CFStringRef)hostHeader);
+    
+    // Add headers.
+    [self.requestHeaders enumerateKeysAndObjectsUsingBlock: ^(id key, id value, BOOL *stop) {
+        CFHTTPMessageSetHeaderFieldValue(request, (CFStringRef)key, (CFStringRef)value);
+    }];
+    
     if (_unauthResponse && _credential) {
-        CFIndex unauthStatus = CFHTTPMessageGetResponseStatusCode(_unauthResponse);
-        Assert(CFHTTPMessageAddAuthentication(request, _unauthResponse,
-                                              (CFStringRef)_credential.user,
-                                              (CFStringRef)_credential.password,
-                                              kCFHTTPAuthenticationSchemeBasic,
-                                              unauthStatus == 407));
+        NSString* password = _credential.password;
+        if (password) {
+            CFIndex unauthStatus = CFHTTPMessageGetResponseStatusCode(_unauthResponse);
+            Assert(CFHTTPMessageAddAuthentication(request, _unauthResponse,
+                                                  (CFStringRef)_credential.user,
+                                                  (CFStringRef)password,
+                                                  kCFHTTPAuthenticationSchemeBasic,
+                                                  unauthStatus == 407));
+        } else {
+            Warn(@"%@: Unable to get password of %@", self, _credential);
+        }
     }
     CFDataRef serialized = CFHTTPMessageCopySerializedMessage(request);
     _trackingRequest = [(NSData*)serialized mutableCopy];
@@ -140,8 +154,8 @@ enum {
     if (_trackingInput || _trackingOutput) {
         LogTo(ChangeTracker, @"%@: stop", self);
         [self clearConnection];
-        [super stop];
     }
+    [super stop];
 }
 
 
@@ -182,7 +196,11 @@ enum {
         return nil;
     realm = [authHeader substringWithRange: NSMakeRange(start, r.location - start)];
     
-    return [_databaseURL my_credentialForRealm: realm authenticationMethod: authenticationMethod];
+    NSURLCredential* cred;
+    cred = [_databaseURL my_credentialForRealm: realm authenticationMethod: authenticationMethod];
+    if (!cred.hasPassword)
+        cred = nil;     // TODO: Add support for client certs
+    return cred;
 }
 
 
@@ -195,15 +213,16 @@ enum {
     size_t headerLen = crlf + 4 - start;
     CFHTTPMessageRef response = CFHTTPMessageCreateEmpty(NULL, NO);
     if (!CFHTTPMessageAppendBytes(response, start, headerLen)) {
-        Warn(@"%@: Couldn't server's HTTP response header", self);
         [self setUpstreamError: @"Unparseable server response"];
         [self stop];
         CFRelease(response);
         return NO;
     }
     
+    // Handle authentication failure (401 or 407 status):
     CFIndex status = CFHTTPMessageGetResponseStatusCode(response);
-    if ((status == 401 || status == 407) && !_unauthResponse) {
+    if ((status == 401 || status == 407) && !_credential
+                                         && ![_requestHeaders objectForKey: @"Authorization"]) {
         _credential = [[self credentialForResponse: response] retain];
         LogTo(ChangeTracker, @"%@: Auth challenge; credential = %@", self, _credential);
         if (_credential) {

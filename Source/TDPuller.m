@@ -18,6 +18,7 @@
 #import "TDDatabase+Replication.h"
 #import <TouchDB/TDRevision.h>
 #import "TDChangeTracker.h"
+#import "TDAuthorizer.h"
 #import "TDBatcher.h"
 #import "TDMultipartDownloader.h"
 #import "TDSequenceMap.h"
@@ -99,6 +100,19 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     unsigned heartbeat = $castIf(NSNumber, [_options objectForKey: @"heartbeat"]).unsignedIntValue;
     if (heartbeat >= 15000)
         _changeTracker.heartbeat = heartbeat;
+    
+    NSMutableDictionary* headers = $mdict({@"User-Agent", [TDRemoteRequest userAgentHeader]});
+    [headers addEntriesFromDictionary: _requestHeaders];
+    if (_authorizer) {
+        NSURL* url = _changeTracker.changesFeedURL;
+        NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL: url];
+        NSString* authorization = [_authorizer authorizeURLRequest: request
+                                                          forRealm: nil];
+        if (authorization)
+            [headers setObject: authorization forKey: @"Authorization"];
+    }
+    _changeTracker.requestHeaders = headers;
+    
     [_changeTracker start];
     if (!_continuous)
         [self asyncTaskStarted];
@@ -131,16 +145,6 @@ static NSString* joinQuotedEscaped(NSArray* strings);
         return NO;
     [_changeTracker stop];
     return YES;
-}
-
-
-// TDChangeTrackerClient protocol
-- (NSString*) authorizationHeader {
-    if (!_authorizer)
-        return nil;
-    NSURL* url = _changeTracker.changesFeedURL;
-    NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL: url];
-    return [_authorizer authorizeURLRequest: request];
 }
 
 
@@ -188,6 +192,8 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 
 
 - (void) changeTrackerStopped:(TDChangeTracker *)tracker {
+    if (tracker != _changeTracker)
+        return;
     NSError* error = tracker.error;
     LogTo(Sync, @"%@: ChangeTracker stopped; error=%@", self, error.description);
     
@@ -315,6 +321,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     [[[TDMultipartDownloader alloc] initWithURL: [NSURL URLWithString: urlStr]
                                        database: _db
                                      authorizer: _authorizer
+                                 requestHeaders: self.requestHeaders
                                    onCompletion:
         ^(TDMultipartDownloader* download, NSError *error) {
             // OK, now we've got the response revision:

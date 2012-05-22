@@ -22,6 +22,7 @@
 - (id) initWithURL: (NSURL*)url
           database: (TDDatabase*)database
         authorizer: (id<TDAuthorizer>)authorizer
+    requestHeaders: (NSDictionary *) requestHeaders
       onCompletion: (TDRemoteRequestCompletionBlock)onCompletion;
 
 @property (readonly) NSDictionary* document;

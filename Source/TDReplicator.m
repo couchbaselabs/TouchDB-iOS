@@ -18,11 +18,13 @@
 #import "TDPuller.h"
 #import <TouchDB/TDDatabase.h>
 #import "TDRemoteRequest.h"
+#import "TDAuthorizer.h"
 #import "TDBatcher.h"
 #import "TDReachability.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
 #import "TDBase64.h"
+#import "MYURLUtils.h"
 
 
 #define kProcessDelay 0.5
@@ -87,6 +89,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     [_error release];
     [_authorizer release];
     [_options release];
+    [_requestHeaders release];
     [super dealloc];
 }
 
@@ -109,6 +112,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 @synthesize changesProcessed=_changesProcessed, changesTotal=_changesTotal;
 @synthesize remoteCheckpoint=_remoteCheckpoint;
 @synthesize authorizer=_authorizer;
+@synthesize requestHeaders = _requestHeaders;
 
 
 - (BOOL) isPush {
@@ -315,9 +319,9 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                                                     URL: url
                                                    body: body
                                              authorizer: _authorizer
+                                         requestHeaders: self.requestHeaders 
                                            onCompletion: onCompletion] autorelease];
 }
-
 
 #pragma mark - CHECKPOINT STORAGE:
 
@@ -414,38 +418,5 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     [_db setLastSequence: _lastSequence withRemoteURL: _remote push: self.isPush];
 }
 
-
-@end
-
-
-
-
-@implementation TDBasicAuthorizer
-
-- (id) initWithCredential: (NSURLCredential*)credential {
-    Assert(credential);
-    self = [super init];
-    if (self) {
-        _credential = [credential retain];
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    [_credential release];
-    [super dealloc];
-}
-
-- (NSString*) authorizeURLRequest: (NSMutableURLRequest*)request {
-    NSString* username = _credential.user;
-    NSString* password = _credential.password;
-    if (username && password) {
-        NSString* seekrit = $sprintf(@"%@:%@", username, password);
-        seekrit = [TDBase64 encode: [seekrit dataUsingEncoding: NSUTF8StringEncoding]];
-        return [@"Basic " stringByAppendingString: seekrit];
-    }
-    return nil;
-}
 
 @end

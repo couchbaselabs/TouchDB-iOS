@@ -14,6 +14,7 @@
 //  and limitations under the License.
 
 #import "TDRemoteRequest.h"
+#import "TDAuthorizer.h"
 #import "TDMisc.h"
 #import "TDBlobStore.h"
 #import <TouchDB/TDDatabase.h>
@@ -31,8 +32,16 @@
 @implementation TDRemoteRequest
 
 
-- (id) initWithMethod: (NSString*)method URL: (NSURL*)url body: (id)body
++ (NSString*) userAgentHeader {
+    return $sprintf(@"TouchDB/%@", [TDRouter versionString]);
+}
+
+
+- (id) initWithMethod: (NSString*)method 
+                  URL: (NSURL*)url 
+                 body: (id)body
            authorizer: (id<TDAuthorizer>)authorizer
+       requestHeaders: (NSDictionary *)requestHeaders
          onCompletion: (TDRemoteRequestCompletionBlock)onCompletion
 {
     self = [super init];
@@ -41,13 +50,18 @@
         _request = [[NSMutableURLRequest alloc] initWithURL: url];
         _request.HTTPMethod = method;
         _request.cachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
-        [_request setValue: $sprintf(@"TouchDB/%@", [TDRouter versionString])
-                  forHTTPHeaderField:@"User-Agent"];
+        
+        // Add headers.
+        [_request setValue: [[self class] userAgentHeader] forHTTPHeaderField:@"User-Agent"];
+        [requestHeaders enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+            [_request setValue:value forHTTPHeaderField:key];
+        }];
         
         LogTo(RemoteRequest, @"%@: Starting...", self);
         [self setupRequest: _request withBody: body];
         
-        NSString* authHeader = [authorizer authorizeURLRequest: _request];
+        NSString* authHeader = [authorizer authorizeURLRequest: _request
+                                                      forRealm: nil];
         if (authHeader)
             [_request setValue: authHeader forHTTPHeaderField: @"Authorization"];
         
