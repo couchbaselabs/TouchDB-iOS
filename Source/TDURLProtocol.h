@@ -13,6 +13,7 @@
 {
     @private
     TDRouter* _router;
+    NSArray* _runLoopModes;
 }
 
 /** The root URL served by this protocol, "touchdb:///". */
@@ -39,4 +40,10 @@
 /** Returns the server registered with the hostname "localhost". */
 + (TDServer*) server;
 
+
+/** Creates and starts a TDURLProtocol, bypassing the normal URL loading system.
+    The client callbacks will be invoked on the current thread's runloop. */
++ (TDURLProtocol*) startProtocolForRequest: (NSURLRequest*)request
+                                withClient: (id<NSURLProtocolClient>)client
+                                     modes: (NSArray*)runLoopModes;
 @end

@@ -123,9 +123,22 @@ static NSString* normalizeHostname( NSString* hostname ) {
 }
 
 
++ (TDURLProtocol*) startProtocolForRequest: (NSURLRequest*)request
+                                withClient: (id<NSURLProtocolClient>)client
+                                     modes: (NSArray*)runLoopModes
+{
+    TDURLProtocol* protocol = [[self alloc] initWithRequest: request
+                                             cachedResponse: nil client: client];
+    protocol->_runLoopModes = [runLoopModes copy];
+    [protocol startLoading];
+    return [protocol autorelease];
+}
+
+
 - (void) dealloc {
     [_router stop];
     [_router release];
+    [_runLoopModes release];
     [super dealloc];
 }
 
@@ -141,24 +154,28 @@ static NSString* normalizeHostname( NSString* hostname ) {
     }
     
     NSThread* loaderThread = [NSThread currentThread];
+    NSArray* modes = _runLoopModes ?: $array(NSRunLoopCommonModes);
     _router = [[TDRouter alloc] initWithServer: server request: self.request];
     _router.onResponseReady = ^(TDResponse* routerResponse) {
         [self performSelector: @selector(onResponseReady:)
                      onThread: loaderThread
                    withObject: routerResponse
-                waitUntilDone: NO];
+                waitUntilDone: NO
+                       modes: modes];
     };
     _router.onDataAvailable = ^(NSData* data, BOOL finished) {
         [self performSelector: @selector(onDataAvailable:)
                      onThread: loaderThread
                    withObject: data
-                waitUntilDone: NO];
+                waitUntilDone: NO
+                        modes: modes];
     };
     _router.onFinished = ^{
         [self performSelector: @selector(onFinished)
                      onThread: loaderThread
                    withObject: nil
-                waitUntilDone: NO];
+                waitUntilDone: NO
+                        modes: modes];
     };
     [_router start];
 }
