@@ -40,6 +40,7 @@
     }];
     
     _connection = [[NSURLConnection connectionWithRequest: request delegate: self] retain];
+    _startTime = CFAbsoluteTimeGetCurrent();
     LogTo(ChangeTracker, @"%@: Started... <%@>", self, request.URL);
     return YES;
 }
@@ -105,16 +106,33 @@
     // Now parse the entire response as a JSON document:
     NSData* input = [_inputBuffer retain];
     LogTo(ChangeTracker, @"%@: Got entire body, %u bytes", self, (unsigned)input.length);
+    BOOL restart = NO;
     NSInteger numChanges = [self receivedPollResponse: input];
-    if (numChanges < 0)
-        [self setUpstreamError: @"Unparseable server response"];
+    if (numChanges < 0) {
+        // Oops, unparseable response:
+        if (_mode == kLongPoll && [input isEqualToData: [@"{\"results\":[\n"
+                                                        dataUsingEncoding: NSUTF8StringEncoding]]) {
+            // Looks like the connection got closed by a proxy (like AWS' load balancer) before
+            // the server had an actual change to send.
+            NSTimeInterval elapsed = CFAbsoluteTimeGetCurrent() - _startTime;
+            Warn(@"%@: Longpoll connection closed (by proxy?) after %.1f sec", self, elapsed);
+            if (elapsed >= 30.0 && elapsed < _heartbeat) {
+                self.heartbeat = elapsed * 0.75;
+                restart = YES;
+            }
+        }
+        if (!restart)
+            [self setUpstreamError: @"Unparseable server response"];
+    } else {
+        // Poll again if there was no error, and either we're in longpoll mode or it looks like we
+        // ran out of changes due to a _limit rather than because we hit the end.
+        restart = (numChanges > 0 && (_mode == kLongPoll || numChanges == (NSInteger)_limit));
+    }
     [input release];
     
     [self clearConnection];
     
-    // Poll again if there was no error, and either we're in longpoll mode or it looks like we
-    // ran out of changes due to a _limit rather than because we hit the end.
-    if (numChanges > 0 && (_mode == kLongPoll || numChanges == (NSInteger)_limit))
+    if (restart)
         [self start];       // Next poll...
     else
         [self stopped];
