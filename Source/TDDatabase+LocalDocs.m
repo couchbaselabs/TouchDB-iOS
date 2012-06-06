@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDDatabase+LocalDocs.h"
-#import <TouchDB/TDRevision.h>
+#import "TDRevision.h"
 #import "TDBody.h"
 #import "TDInternal.h"
 

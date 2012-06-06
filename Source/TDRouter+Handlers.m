@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDRouter.h"
-#import <TouchDB/TDDatabase.h>
+#import "TDDatabase.h"
 #import "TDDatabase+Attachments.h"
 #import "TDDatabase+Insertion.h"
 #import "TDDatabase+LocalDocs.h"
@@ -22,7 +22,7 @@
 #import "TDView.h"
 #import "TDBody.h"
 #import "TDMultipartDocumentReader.h"
-#import <TouchDB/TDRevision.h>
+#import "TDRevision.h"
 #import "TDServer.h"
 #import "TDReplicator.h"
 #import "TDReplicatorManager.h"

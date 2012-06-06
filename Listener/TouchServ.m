@@ -7,8 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <TouchDB/TouchDB.h>
-#import <TouchDB/TDRouter.h>
+#import "TouchDB.h"
+#import "TDRouter.h"
 #import <TouchDBListener/TDListener.h>
 
 #if DEBUG

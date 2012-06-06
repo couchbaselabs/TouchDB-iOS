@@ -7,7 +7,7 @@
 //
 
 #import "TDMultipartReader.h"
-#import <TouchDB/TDStatus.h>
+#import "TDStatus.h"
 @class TDDatabase, TDRevision, TDBlobStoreWriter;
 
 

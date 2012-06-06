@@ -15,7 +15,7 @@
 
 #import "TDDatabase+Insertion.h"
 #import "TDDatabase+Attachments.h"
-#import <TouchDB/TDRevision.h>
+#import "TDRevision.h"
 #import "TDCanonicalJSON.h"
 #import "TDAttachment.h"
 #import "TDInternal.h"

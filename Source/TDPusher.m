@@ -14,9 +14,9 @@
 //  and limitations under the License.
 
 #import "TDPusher.h"
-#import <TouchDB/TDDatabase.h>
+#import "TDDatabase.h"
 #import "TDDatabase+Insertion.h"
-#import <TouchDB/TDRevision.h>
+#import "TDRevision.h"
 #import "TDMultipartUploader.h"
 #import "TDInternal.h"
 #import "TDMisc.h"

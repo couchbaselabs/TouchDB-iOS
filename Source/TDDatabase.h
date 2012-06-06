@@ -7,8 +7,8 @@
  *
  */
 
-#import <TouchDB/TDRevision.h>
-#import <TouchDB/TDStatus.h>
+#import "TDRevision.h"
+#import "TDStatus.h"
 @class FMDatabase, TDView, TDBlobStore;
 struct TDQueryOptions;      // declared in TDView.h
 

@@ -7,7 +7,7 @@
 //
 
 #import "TDReplicator.h"
-#import <TouchDB/TDRevision.h>
+#import "TDRevision.h"
 @class TDChangeTracker, TDSequenceMap;
 
 

@@ -6,7 +6,7 @@
 //  Copyright (c) 2011 Couchbase, Inc. All rights reserved.
 //
 
-#import <TouchDB/TDDatabase.h>
+#import "TDDatabase.h"
 @class TDServer, TDDatabaseManager, TDResponse, TDBody, TDMultipartWriter;
 
 
