@@ -40,11 +40,14 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
 {
     @private
     TDDatabase* _db;
-    TDRevision* _currentRevision;
+    TDRevision* _currentRevision, *_newRevision;
     TDStatus _errorType;
     NSString* _errorMessage;
+    NSArray* _changedKeys;
 }
-- (id) initWithDatabase: (TDDatabase*)db revision: (TDRevision*)currentRevision;
+- (id) initWithDatabase: (TDDatabase*)db
+               revision: (TDRevision*)currentRevision 
+            newRevision: (TDRevision*)newRevision;
 @property (readonly) NSDictionary* currentRevision;
 @property TDStatus errorType;
 @property (copy) NSString* errorMessage;
@@ -579,7 +582,8 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
         [properties setObject: $true forKey: @"_deleted"];
     
     TDValidationContext* context = [[TDValidationContext alloc] initWithDatabase: self
-                                                                        revision: oldRev];
+                                                                        revision: oldRev
+                                                                     newRevision: newRev];
     TDStatus status = kTDStatusOK;
     for (TDValidationBlock validationName in _validations) {
         TDValidationBlock validation = [self validationNamed: validationName];
@@ -603,11 +607,15 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
 
 @implementation TDValidationContext
 
-- (id) initWithDatabase: (TDDatabase*)db revision: (TDRevision*)currentRevision {
+- (id) initWithDatabase: (TDDatabase*)db
+               revision: (TDRevision*)currentRevision
+            newRevision: (TDRevision*)newRevision
+{
     self = [super init];
     if (self) {
         _db = db;
         _currentRevision = currentRevision;
+        _newRevision = newRevision;
         _errorType = kTDStatusForbidden;
         _errorMessage = [@"invalid document" retain];
     }
@@ -615,6 +623,7 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
 }
 
 - (void)dealloc {
+    [_changedKeys release];
     [_errorMessage release];
     [super dealloc];
 }
@@ -626,5 +635,58 @@ NSString* const TDDatabaseChangeNotification = @"TDDatabaseChange";
 }
 
 @synthesize errorType=_errorType, errorMessage=_errorMessage;
+
+- (NSArray*) changedKeys {
+    if (!_changedKeys) {
+        NSMutableArray* changedKeys = [[NSMutableArray alloc] init];
+        NSDictionary* cur = self.currentRevision;
+        NSDictionary* nuu = _newRevision.properties;
+        for (NSString* key in cur.allKeys) {
+            if (!$equal([cur objectForKey: key], [nuu objectForKey: key])
+                    && ![key isEqualToString: @"_rev"])
+                [changedKeys addObject: key];
+        }
+        for (NSString* key in nuu.allKeys) {
+            if (![cur objectForKey: key]
+                    && ![key isEqualToString: @"_rev"] && ![key isEqualToString: @"_id"])
+                [changedKeys addObject: key];
+        }
+        _changedKeys = changedKeys;
+    }
+    return _changedKeys;
+}
+
+- (BOOL) allowChangesOnlyTo: (NSArray*)keys {
+    for (NSString* key in self.changedKeys) {
+        if (![keys containsObject: key]) {
+            self.errorMessage = $sprintf(@"The '%@' property may not be changed", key);
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (BOOL) disallowChangesTo: (NSArray*)keys {
+    for (NSString* key in self.changedKeys) {
+        if ([keys containsObject: key]) {
+            self.errorMessage = $sprintf(@"The '%@' property may not be changed", key);
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (BOOL) enumerateChanges: (TDChangeEnumeratorBlock)enumerator {
+    NSDictionary* cur = self.currentRevision;
+    NSDictionary* nuu = _newRevision.properties;
+    for (NSString* key in self.changedKeys) {
+        if (!enumerator(key, [cur objectForKey: key], [nuu objectForKey: key])) {
+            if (!_errorMessage)
+                self.errorMessage = $sprintf(@"Illegal change to '%@' property", key);
+            return NO;
+        }
+    }
+    return YES;
+}
 
 @end

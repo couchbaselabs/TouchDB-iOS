@@ -46,6 +46,17 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 @implementation TDReplicator
 
++ (NSString *)progressChangedNotification
+{
+    return TDReplicatorProgressChangedNotification;
+}
+
++ (NSString *)stoppedNotification
+{
+    return TDReplicatorStoppedNotification;
+}
+
+
 - (id) initWithDB: (TDDatabase*)db
            remote: (NSURL*)remote
              push: (BOOL)push
@@ -315,12 +326,14 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     LogTo(SyncVerbose, @"%@: %@ .%@", self, method, relativePath);
     NSString* urlStr = [_remote.absoluteString stringByAppendingString: relativePath];
     NSURL* url = [NSURL URLWithString: urlStr];
-    return [[[TDRemoteJSONRequest alloc] initWithMethod: method
-                                                    URL: url
-                                                   body: body
-                                             authorizer: _authorizer
-                                         requestHeaders: self.requestHeaders 
-                                           onCompletion: onCompletion] autorelease];
+    TDRemoteJSONRequest *req = [[TDRemoteJSONRequest alloc] initWithMethod: method
+                                                                        URL: url
+                                                                       body: body
+                                                                 authorizer: _authorizer
+                                                             requestHeaders: self.requestHeaders 
+                                                              onCompletion: onCompletion];
+    [req start];
+    return [req autorelease];
 }
 
 #pragma mark - CHECKPOINT STORAGE:
