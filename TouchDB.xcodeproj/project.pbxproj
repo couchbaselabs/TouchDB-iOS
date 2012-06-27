@@ -139,10 +139,8 @@
 		2783A07B156C39E300DC8692 /* OAToken.m in Sources */ = {isa = PBXBuildFile; fileRef = 2783A031156C39E300DC8692 /* OAToken.m */; };
 		2783A08D156C3A8300DC8692 /* TDAuthorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A08B156C3A8300DC8692 /* TDAuthorizer.h */; };
 		2783A08E156C3A8300DC8692 /* TDAuthorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A08B156C3A8300DC8692 /* TDAuthorizer.h */; };
-		2783A090156C3A8300DC8692 /* TDAuthorizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2783A08C156C3A8300DC8692 /* TDAuthorizer.m */; };
 		2783A093156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */; };
 		2783A094156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */; };
-		2783A096156C3A9200DC8692 /* TDOAuth1Authorizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2783A092156C3A9200DC8692 /* TDOAuth1Authorizer.m */; };
 		278B0C8E152A7C1F00577747 /* TDMultipartDocumentReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 27ADC078152502EE001ABC1D /* TDMultipartDocumentReader.m */; };
 		278B0C8F152A7C2E00577747 /* TDJSON.m in Sources */ = {isa = PBXBuildFile; fileRef = 272B85131523691700A90CB2 /* TDJSON.m */; };
 		278B0C90152A7C6100577747 /* TDView_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 27B0B77F1491E73400A817AD /* TDView_Tests.m */; };
@@ -523,9 +521,7 @@
 		2783A030156C39E300DC8692 /* OAToken.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OAToken.h; sourceTree = "<group>"; };
 		2783A031156C39E300DC8692 /* OAToken.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OAToken.m; sourceTree = "<group>"; };
 		2783A08B156C3A8300DC8692 /* TDAuthorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDAuthorizer.h; sourceTree = "<group>"; };
-		2783A08C156C3A8300DC8692 /* TDAuthorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDAuthorizer.m; sourceTree = "<group>"; };
 		2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDOAuth1Authorizer.h; sourceTree = "<group>"; };
-		2783A092156C3A9200DC8692 /* TDOAuth1Authorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDOAuth1Authorizer.m; sourceTree = "<group>"; };
 		278E4DC2156194F000DDCEF9 /* TDChangeTracker_Tests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDChangeTracker_Tests.m; sourceTree = "<group>"; };
 		278E4DC615619FC400DDCEF9 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.1.sdk/System/Library/Frameworks/CFNetwork.framework; sourceTree = DEVELOPER_DIR; };
 		279906E1149A65B7003D4338 /* TDRemoteRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDRemoteRequest.h; sourceTree = "<group>"; };
@@ -1869,8 +1865,6 @@
 				2783A069156C39E300DC8692 /* OAPlaintextSignatureProvider.m in Sources */,
 				2783A071156C39E300DC8692 /* OARequestParameter.m in Sources */,
 				2783A07B156C39E300DC8692 /* OAToken.m in Sources */,
-				2783A090156C3A8300DC8692 /* TDAuthorizer.m in Sources */,
-				2783A096156C3A9200DC8692 /* TDOAuth1Authorizer.m in Sources */,
 				27EA34CA159BBBED008D5CE5 /* TDAuthorizer.m in Sources */,
 				27EA34CE159BBBED008D5CE5 /* TDOAuth1Authorizer.m in Sources */,
 			);
