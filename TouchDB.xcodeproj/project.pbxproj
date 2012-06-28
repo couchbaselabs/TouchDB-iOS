@@ -592,10 +592,10 @@
 		27E11F0C14ACFFC60006B340 /* TDHTTPServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDHTTPServer.h; sourceTree = "<group>"; };
 		27E11F0E14AD15940006B340 /* TDHTTPResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDHTTPResponse.h; sourceTree = "<group>"; };
 		27E11F0F14AD15940006B340 /* TDHTTPResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDHTTPResponse.m; sourceTree = "<group>"; };
-		27EA34C3159BBBEC008D5CE5 /* TDAuthorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TDAuthorizer.h; path = ../../../TouchDB/Source/TDAuthorizer.h; sourceTree = "<group>"; };
-		27EA34C4159BBBEC008D5CE5 /* TDAuthorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TDAuthorizer.m; path = ../../../TouchDB/Source/TDAuthorizer.m; sourceTree = "<group>"; };
-		27EA34C5159BBBEC008D5CE5 /* TDOAuth1Authorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TDOAuth1Authorizer.h; path = ../../../TouchDB/Source/TDOAuth1Authorizer.h; sourceTree = "<group>"; };
-		27EA34C6159BBBEC008D5CE5 /* TDOAuth1Authorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TDOAuth1Authorizer.m; path = ../../../TouchDB/Source/TDOAuth1Authorizer.m; sourceTree = "<group>"; };
+		27EA34C3159BBBEC008D5CE5 /* TDAuthorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDAuthorizer.h; sourceTree = "<group>"; };
+		27EA34C4159BBBEC008D5CE5 /* TDAuthorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDAuthorizer.m; sourceTree = "<group>"; };
+		27EA34C5159BBBEC008D5CE5 /* TDOAuth1Authorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDOAuth1Authorizer.h; sourceTree = "<group>"; };
+		27EA34C6159BBBEC008D5CE5 /* TDOAuth1Authorizer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDOAuth1Authorizer.m; sourceTree = "<group>"; };
 		27F0744611CD4B6D00E9A2AB /* TDDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = TDDatabase.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		27F0744711CD4B6D00E9A2AB /* TDDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = TDDatabase.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		27F0744911CD4BA000E9A2AB /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
