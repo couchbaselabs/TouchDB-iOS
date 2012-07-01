@@ -73,7 +73,7 @@ int main (int argc, const char * argv[])
                 listener.readOnly = YES;
             } else if (strcmp(argv[i], "--auth") == 0) {
                 srandomdev();
-                NSString* password = [NSString stringWithFormat: @"%x", random()];
+                NSString* password = [NSString stringWithFormat: @"%lx", random()];
                 listener.passwords = [NSDictionary dictionaryWithObject: password
                                                                  forKey: @"touchdb"];
                 Log(@"Auth required: user='touchdb', password='%@'", password);
@@ -89,6 +89,8 @@ int main (int argc, const char * argv[])
         
         [[NSRunLoop currentRunLoop] run];
         
+        [listener release];
+        [server release];
     }
     return 0;
 }
