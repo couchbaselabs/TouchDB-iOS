@@ -10,6 +10,9 @@
 #import "TouchDB.h"
 #import "TDRouter.h"
 #import <TouchDBListener/TDListener.h>
+#import <TouchDB/TDReplicator.h>
+#import <TouchDB/TDDatabaseManager.h>
+#import <TouchDB/TDDatabase+Replication.h>
 
 #if DEBUG
 #import "Logging.h"
@@ -44,6 +47,52 @@ static NSString* GetServerPath() {
 }
 
 
+static bool doReplicate( TDServer* server, const char* replArg, BOOL pull) {
+    NSURL* remote = [NSMakeCollectable(CFURLCreateWithBytes(NULL, (const UInt8*)replArg,
+                                                           strlen(replArg),
+                                                           kCFStringEncodingUTF8, NULL)) autorelease];
+    if (!remote || !remote.scheme) {
+        fprintf(stderr, "Invalid remote URL <%s>\n", replArg);
+        return false;
+    }
+    NSString* dbName = remote.lastPathComponent;
+    if (dbName.length == 0) {
+        fprintf(stderr, "Invalid database name '%s'\n", dbName.UTF8String);
+        return false;
+    }
+    
+    if (pull)
+        Log(@"Pulling from <%@> --> %@ ...", remote, dbName);
+    else
+        Log(@"Pushing %@ --> <%@> ...", dbName, remote);
+    
+    [server tellDatabaseManager: ^(TDDatabaseManager *dbm) {
+        TDReplicator* repl = nil;
+        TDDatabase* db = [dbm existingDatabaseNamed: dbName];
+        if (pull) {
+            if (db) {
+                if (![db deleteDatabase: nil]) {
+                    fprintf(stderr, "Couldn't delete existing database '%s'\n", dbName.UTF8String);
+                    return;
+                }
+                db = [dbm databaseNamed: dbName];
+            }
+        }
+        if (!db) {
+            fprintf(stderr, "No such database '%s'\n", dbName.UTF8String);
+            return;
+        }
+        [db open];
+        repl = [db replicatorWithRemoteURL: remote push: !pull continuous: NO];
+        if (!repl)
+            fprintf(stderr, "Unable to create replication.\n");
+        [repl start];
+    }];
+        
+    return true;
+}
+
+
 int main (int argc, const char * argv[])
 {
     @autoreleasepool {
@@ -59,6 +108,7 @@ int main (int argc, const char * argv[])
             Warn(@"FATAL: Error initializing TouchDB: %@", error);
             exit(1);
         }
+        [TDURLProtocol setServer: server];
         
         // Start a listener socket:
         TDListener* listener = [[TDListener alloc] initWithTDServer: server port: kPortNumber];
@@ -67,6 +117,9 @@ int main (int argc, const char * argv[])
         [listener setBonjourName: @"TouchServ" type: @"_touchdb._tcp."];
         NSData* value = [@"value" dataUsingEncoding: NSUTF8StringEncoding];
         listener.TXTRecordDictionary = [NSDictionary dictionaryWithObject: value forKey: @"Key"];
+        
+        const char* replArg = NULL;
+        BOOL pull = NO;
         
         for (int i = 1; i < argc; ++i) {
             if (strcmp(argv[i], "--readonly") == 0) {
@@ -77,18 +130,29 @@ int main (int argc, const char * argv[])
                 listener.passwords = [NSDictionary dictionaryWithObject: password
                                                                  forKey: @"touchdb"];
                 Log(@"Auth required: user='touchdb', password='%@'", password);
+            } else if  (strcmp(argv[i], "--pull") == 0) {
+                replArg = argv[i+1];
+                pull = YES;
+            } else if  (strcmp(argv[i], "--push") == 0) {
+                replArg = argv[i+1];
             }
         }
         
         [listener start];
         
-        Log(@"TouchServ %@ is listening%@ on port %d ... relax!",
-            [TDRouter versionString],
-            (listener.readOnly ? @" in read-only mode" : @""),
-            listener.port);
+        if (replArg) {
+            if (!doReplicate(server, replArg, pull))
+                return 1;
+        } else {
+            Log(@"TouchServ %@ is listening%@ on port %d ... relax!",
+                [TDRouter versionString],
+                (listener.readOnly ? @" in read-only mode" : @""),
+                listener.port);
+        }
         
         [[NSRunLoop currentRunLoop] run];
         
+        Log(@"TouchServ quitting");
         [listener release];
         [server release];
     }

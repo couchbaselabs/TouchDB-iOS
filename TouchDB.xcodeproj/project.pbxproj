@@ -43,7 +43,7 @@
 		272B85141523691700A90CB2 /* TDJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = 272B85121523691700A90CB2 /* TDJSON.h */; };
 		272B85161523691700A90CB2 /* TDJSON.m in Sources */ = {isa = PBXBuildFile; fileRef = 272B85131523691700A90CB2 /* TDJSON.m */; };
 		274C391F149FAE0000A5E89B /* TDDatabase+Attachments.m in Sources */ = {isa = PBXBuildFile; fileRef = 274C391B149FAE0000A5E89B /* TDDatabase+Attachments.m */; };
-		2751D4E4151BAE7000F7FD57 /* TDDatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */; };
+		2751D4E4151BAE7000F7FD57 /* TDDatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2751D4E6151BAE7000F7FD57 /* TDDatabaseManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2751D4E3151BAE7000F7FD57 /* TDDatabaseManager.m */; };
 		2753156E14ACEFC90065964D /* DDData.h in Headers */ = {isa = PBXBuildFile; fileRef = 2753155114ACEFC90065964D /* DDData.h */; };
 		2753157214ACEFC90065964D /* DDNumber.h in Headers */ = {isa = PBXBuildFile; fileRef = 2753155314ACEFC90065964D /* DDNumber.h */; };
@@ -318,6 +318,9 @@
 		27F074AB11CD5D7A00E9A2AB /* TDBody.m in Sources */ = {isa = PBXBuildFile; fileRef = 27F074AA11CD5D7A00E9A2AB /* TDBody.m */; };
 		27F0751311CDC7F900E9A2AB /* Logging.m in Sources */ = {isa = PBXBuildFile; fileRef = 27F0751211CDC7F900E9A2AB /* Logging.m */; };
 		27F0751811CDC80A00E9A2AB /* ExceptionUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 27F0751711CDC80A00E9A2AB /* ExceptionUtils.m */; };
+		27F08C9E15A7B8E6003C3E2B /* TDDatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		27F08C9F15A7B8E8003C3E2B /* TDDatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		27F08CA015A7B8EA003C3E2B /* TDDatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		27F0C77F1533BDD8004EBA89 /* TDAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F0C7791533BDD8004EBA89 /* TDAttachment.h */; };
 		27F0C7801533BDD8004EBA89 /* TDAttachment.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F0C7791533BDD8004EBA89 /* TDAttachment.h */; };
 		27F0C7811533BDD8004EBA89 /* TDAttachment.m in Sources */ = {isa = PBXBuildFile; fileRef = 27F0C77A1533BDD8004EBA89 /* TDAttachment.m */; };
@@ -1281,6 +1284,7 @@
 				27B0B8051492BDE800A817AD /* TouchDB.h in Headers */,
 				27E41530154F6E9C00771FC5 /* (null) in Headers */,
 				278E4DBC1561921F00DDCEF9 /* TDStatus.h in Headers */,
+				27F08CA015A7B8EA003C3E2B /* TDDatabaseManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1313,6 +1317,7 @@
 				2783A094156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */,
 				27EA34C8159BBBED008D5CE5 /* TDAuthorizer.h in Headers */,
 				27EA34CC159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
+				27F08C9F15A7B8E8003C3E2B /* TDDatabaseManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1345,6 +1350,7 @@
 				2783A093156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */,
 				27EA34C7159BBBED008D5CE5 /* TDAuthorizer.h in Headers */,
 				27EA34CB159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
+				27F08C9E15A7B8E6003C3E2B /* TDDatabaseManager.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
