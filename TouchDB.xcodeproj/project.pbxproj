@@ -775,30 +775,7 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				27F0744611CD4B6D00E9A2AB /* TDDatabase.h */,
-				27F0744711CD4B6D00E9A2AB /* TDDatabase.m */,
-				2711CDFC14C7590A00505D55 /* TDDatabase+Attachments.h */,
-				274C391B149FAE0000A5E89B /* TDDatabase+Attachments.m */,
-				2711CDFF14C7595900505D55 /* TDDatabase+Insertion.h */,
-				27AA409A14AA86AD00E2A5FF /* TDDatabase+Insertion.m */,
-				2711CE0214C759BD00505D55 /* TDDatabase+Replication.h */,
-				27AA40A014AA8A6600E2A5FF /* TDDatabase+Replication.m */,
-				2773ADC514BD1EB80027A292 /* TDDatabase+LocalDocs.h */,
-				2773ADC614BD1EB80027A292 /* TDDatabase+LocalDocs.m */,
-				2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */,
-				2751D4E3151BAE7000F7FD57 /* TDDatabaseManager.m */,
-				279EB2CC149140DE00E74185 /* TDView.h */,
-				279EB2CD149140DE00E74185 /* TDView.m */,
-				27F0C7791533BDD8004EBA89 /* TDAttachment.h */,
-				27F0C77A1533BDD8004EBA89 /* TDAttachment.m */,
-				27F074A911CD5D7A00E9A2AB /* TDBody.h */,
-				27F074AA11CD5D7A00E9A2AB /* TDBody.m */,
-				270B3E3714898DF200E0A926 /* TDRevision.h */,
-				270B3E3814898DF200E0A926 /* TDRevision.m */,
-				27C706401486BBD500F0F099 /* TDServer.h */,
-				27C706411486BBD500F0F099 /* TDServer.m */,
-				27731EFD1493FA3100815D67 /* TDBlobStore.h */,
-				27731EFE1493FA3100815D67 /* TDBlobStore.m */,
+				27F00E1A15B60952008CDA68 /* Database */,
 				279EB2D7149192C700E74185 /* Router */,
 				27821BB4148E7D590099B373 /* Replicator */,
 				27E2E62E159A26A1005B9234 /* Networking */,
@@ -1139,6 +1116,37 @@
 				27103F8214E9CE4400DF7209 /* TDReachability.m */,
 			);
 			name = Networking;
+			sourceTree = "<group>";
+		};
+		27F00E1A15B60952008CDA68 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				27F0744611CD4B6D00E9A2AB /* TDDatabase.h */,
+				27F0744711CD4B6D00E9A2AB /* TDDatabase.m */,
+				2711CDFC14C7590A00505D55 /* TDDatabase+Attachments.h */,
+				274C391B149FAE0000A5E89B /* TDDatabase+Attachments.m */,
+				2711CDFF14C7595900505D55 /* TDDatabase+Insertion.h */,
+				27AA409A14AA86AD00E2A5FF /* TDDatabase+Insertion.m */,
+				2711CE0214C759BD00505D55 /* TDDatabase+Replication.h */,
+				27AA40A014AA8A6600E2A5FF /* TDDatabase+Replication.m */,
+				2773ADC514BD1EB80027A292 /* TDDatabase+LocalDocs.h */,
+				2773ADC614BD1EB80027A292 /* TDDatabase+LocalDocs.m */,
+				2751D4E2151BAE7000F7FD57 /* TDDatabaseManager.h */,
+				2751D4E3151BAE7000F7FD57 /* TDDatabaseManager.m */,
+				279EB2CC149140DE00E74185 /* TDView.h */,
+				279EB2CD149140DE00E74185 /* TDView.m */,
+				27F0C7791533BDD8004EBA89 /* TDAttachment.h */,
+				27F0C77A1533BDD8004EBA89 /* TDAttachment.m */,
+				27F074A911CD5D7A00E9A2AB /* TDBody.h */,
+				27F074AA11CD5D7A00E9A2AB /* TDBody.m */,
+				270B3E3714898DF200E0A926 /* TDRevision.h */,
+				270B3E3814898DF200E0A926 /* TDRevision.m */,
+				27C706401486BBD500F0F099 /* TDServer.h */,
+				27C706411486BBD500F0F099 /* TDServer.m */,
+				27731EFD1493FA3100815D67 /* TDBlobStore.h */,
+				27731EFE1493FA3100815D67 /* TDBlobStore.m */,
+			);
+			name = Database;
 			sourceTree = "<group>";
 		};
 		27F0746C11CD51A200E9A2AB /* FMDB */ = {
@@ -2086,7 +2094,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
-				CURRENT_PROJECT_VERSION = 0.801;
+				CURRENT_PROJECT_VERSION = 0.9;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -2108,7 +2116,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
-				CURRENT_PROJECT_VERSION = 0.801;
+				CURRENT_PROJECT_VERSION = 0.9;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
