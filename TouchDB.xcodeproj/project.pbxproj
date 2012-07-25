@@ -86,6 +86,10 @@
 		275315FC14ACF83C0065964D /* TouchDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 270B3DEA1489359000E0A926 /* TouchDB.framework */; };
 		2753160C14ACFC2A0065964D /* TDHTTPConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = 2753160A14ACFC2A0065964D /* TDHTTPConnection.h */; };
 		2753160D14ACFC2A0065964D /* TDHTTPConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 2753160B14ACFC2A0065964D /* TDHTTPConnection.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		2755813F15C0A10100933CB2 /* MYStreamUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 2755813D15C0A10100933CB2 /* MYStreamUtils.h */; };
+		2755814015C0A10100933CB2 /* MYStreamUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 2755813D15C0A10100933CB2 /* MYStreamUtils.h */; };
+		2755814115C0A10100933CB2 /* MYStreamUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 2755813E15C0A10100933CB2 /* MYStreamUtils.m */; };
+		2755814215C0A10100933CB2 /* MYStreamUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 2755813E15C0A10100933CB2 /* MYStreamUtils.m */; };
 		2766EFF814DB7F9F009ECCA8 /* TDMultipartWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2766EFF614DB7F9F009ECCA8 /* TDMultipartWriter.h */; };
 		2766EFFA14DB7F9F009ECCA8 /* TDMultipartWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = 2766EFF714DB7F9F009ECCA8 /* TDMultipartWriter.m */; };
 		2766EFFD14DC7B37009ECCA8 /* TDMultiStreamWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2766EFFB14DC7B37009ECCA8 /* TDMultiStreamWriter.h */; };
@@ -493,6 +497,8 @@
 		275315FA14ACF7FF0065964D /* TouchDBListener.exp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.exports; path = TouchDBListener.exp; sourceTree = "<group>"; };
 		2753160A14ACFC2A0065964D /* TDHTTPConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDHTTPConnection.h; sourceTree = "<group>"; };
 		2753160B14ACFC2A0065964D /* TDHTTPConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDHTTPConnection.m; sourceTree = "<group>"; };
+		2755813D15C0A10100933CB2 /* MYStreamUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MYStreamUtils.h; sourceTree = "<group>"; };
+		2755813E15C0A10100933CB2 /* MYStreamUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MYStreamUtils.m; sourceTree = "<group>"; };
 		2766EFF614DB7F9F009ECCA8 /* TDMultipartWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDMultipartWriter.h; sourceTree = "<group>"; };
 		2766EFF714DB7F9F009ECCA8 /* TDMultipartWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDMultipartWriter.m; sourceTree = "<group>"; };
 		2766EFFB14DC7B37009ECCA8 /* TDMultiStreamWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDMultiStreamWriter.h; sourceTree = "<group>"; };
@@ -1179,6 +1185,8 @@
 				27F0749E11CD5B4F00E9A2AB /* Test.m */,
 				279CE3B614D4A885009F3FA6 /* MYBlockUtils.h */,
 				279CE3B714D4A885009F3FA6 /* MYBlockUtils.m */,
+				2755813D15C0A10100933CB2 /* MYStreamUtils.h */,
+				2755813E15C0A10100933CB2 /* MYStreamUtils.m */,
 				27108CDE15128EA500E5B92C /* MYURLHandler.h */,
 				27108CDF15128EA500E5B92C /* MYURLHandler.m */,
 				270BDD341563338B007D52F6 /* MYURLUtils.h */,
@@ -1326,6 +1334,7 @@
 				27EA34C8159BBBED008D5CE5 /* TDAuthorizer.h in Headers */,
 				27EA34CC159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
 				27F08C9F15A7B8E8003C3E2B /* TDDatabaseManager.h in Headers */,
+				2755814015C0A10100933CB2 /* MYStreamUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1359,6 +1368,7 @@
 				27EA34C7159BBBED008D5CE5 /* TDAuthorizer.h in Headers */,
 				27EA34CB159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
 				27F08C9E15A7B8E6003C3E2B /* TDDatabaseManager.h in Headers */,
+				2755813F15C0A10100933CB2 /* MYStreamUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1881,6 +1891,7 @@
 				2783A07B156C39E300DC8692 /* OAToken.m in Sources */,
 				27EA34CA159BBBED008D5CE5 /* TDAuthorizer.m in Sources */,
 				27EA34CE159BBBED008D5CE5 /* TDOAuth1Authorizer.m in Sources */,
+				2755814215C0A10100933CB2 /* MYStreamUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1959,6 +1970,7 @@
 				2783A07A156C39E300DC8692 /* OAToken.m in Sources */,
 				27EA34C9159BBBED008D5CE5 /* TDAuthorizer.m in Sources */,
 				27EA34CD159BBBED008D5CE5 /* TDOAuth1Authorizer.m in Sources */,
+				2755814115C0A10100933CB2 /* MYStreamUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
