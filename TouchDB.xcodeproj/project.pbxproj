@@ -145,6 +145,11 @@
 		2783A08E156C3A8300DC8692 /* TDAuthorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A08B156C3A8300DC8692 /* TDAuthorizer.h */; };
 		2783A093156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */; };
 		2783A094156C3A9200DC8692 /* TDOAuth1Authorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */; };
+		2789E29915D4630E00B5EA22 /* MYRegexUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 2789E29715D4630E00B5EA22 /* MYRegexUtils.h */; };
+		2789E29A15D4630E00B5EA22 /* MYRegexUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 2789E29715D4630E00B5EA22 /* MYRegexUtils.h */; };
+		2789E29B15D4630E00B5EA22 /* MYRegexUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 2789E29815D4630E00B5EA22 /* MYRegexUtils.m */; };
+		2789E29C15D4630E00B5EA22 /* MYRegexUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 2789E29815D4630E00B5EA22 /* MYRegexUtils.m */; };
+		2789E29E15D4633900B5EA22 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 275315F414ACF1CC0065964D /* Security.framework */; };
 		278B0C8E152A7C1F00577747 /* TDMultipartDocumentReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 27ADC078152502EE001ABC1D /* TDMultipartDocumentReader.m */; };
 		278B0C8F152A7C2E00577747 /* TDJSON.m in Sources */ = {isa = PBXBuildFile; fileRef = 272B85131523691700A90CB2 /* TDJSON.m */; };
 		278B0C90152A7C6100577747 /* TDView_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 27B0B77F1491E73400A817AD /* TDView_Tests.m */; };
@@ -531,6 +536,8 @@
 		2783A031156C39E300DC8692 /* OAToken.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OAToken.m; sourceTree = "<group>"; };
 		2783A08B156C3A8300DC8692 /* TDAuthorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDAuthorizer.h; sourceTree = "<group>"; };
 		2783A091156C3A9200DC8692 /* TDOAuth1Authorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDOAuth1Authorizer.h; sourceTree = "<group>"; };
+		2789E29715D4630E00B5EA22 /* MYRegexUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MYRegexUtils.h; sourceTree = "<group>"; };
+		2789E29815D4630E00B5EA22 /* MYRegexUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MYRegexUtils.m; sourceTree = "<group>"; };
 		278E4DC2156194F000DDCEF9 /* TDChangeTracker_Tests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDChangeTracker_Tests.m; sourceTree = "<group>"; };
 		278E4DC615619FC400DDCEF9 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.1.sdk/System/Library/Frameworks/CFNetwork.framework; sourceTree = DEVELOPER_DIR; };
 		279906E1149A65B7003D4338 /* TDRemoteRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDRemoteRequest.h; sourceTree = "<group>"; };
@@ -644,6 +651,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2789E29E15D4633900B5EA22 /* Security.framework in Frameworks */,
 				278E4DC11561947500DDCEF9 /* CoreServices.framework in Frameworks */,
 				27C90FC814F5BA06007C5E58 /* libTouchDB.a in Frameworks */,
 				27103F8814EA076600DF7209 /* SystemConfiguration.framework in Frameworks */,
@@ -1185,6 +1193,8 @@
 				27F0749E11CD5B4F00E9A2AB /* Test.m */,
 				279CE3B614D4A885009F3FA6 /* MYBlockUtils.h */,
 				279CE3B714D4A885009F3FA6 /* MYBlockUtils.m */,
+				2789E29715D4630E00B5EA22 /* MYRegexUtils.h */,
+				2789E29815D4630E00B5EA22 /* MYRegexUtils.m */,
 				2755813D15C0A10100933CB2 /* MYStreamUtils.h */,
 				2755813E15C0A10100933CB2 /* MYStreamUtils.m */,
 				27108CDE15128EA500E5B92C /* MYURLHandler.h */,
@@ -1335,6 +1345,7 @@
 				27EA34CC159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
 				27F08C9F15A7B8E8003C3E2B /* TDDatabaseManager.h in Headers */,
 				2755814015C0A10100933CB2 /* MYStreamUtils.h in Headers */,
+				2789E29A15D4630E00B5EA22 /* MYRegexUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1369,6 +1380,7 @@
 				27EA34CB159BBBED008D5CE5 /* TDOAuth1Authorizer.h in Headers */,
 				27F08C9E15A7B8E6003C3E2B /* TDDatabaseManager.h in Headers */,
 				2755813F15C0A10100933CB2 /* MYStreamUtils.h in Headers */,
+				2789E29915D4630E00B5EA22 /* MYRegexUtils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1892,6 +1904,7 @@
 				27EA34CA159BBBED008D5CE5 /* TDAuthorizer.m in Sources */,
 				27EA34CE159BBBED008D5CE5 /* TDOAuth1Authorizer.m in Sources */,
 				2755814215C0A10100933CB2 /* MYStreamUtils.m in Sources */,
+				2789E29C15D4630E00B5EA22 /* MYRegexUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1971,6 +1984,7 @@
 				27EA34C9159BBBED008D5CE5 /* TDAuthorizer.m in Sources */,
 				27EA34CD159BBBED008D5CE5 /* TDOAuth1Authorizer.m in Sources */,
 				2755814115C0A10100933CB2 /* MYStreamUtils.m in Sources */,
+				2789E29B15D4630E00B5EA22 /* MYRegexUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2106,7 +2120,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
-				CURRENT_PROJECT_VERSION = 0.92;
+				CURRENT_PROJECT_VERSION = 0.931;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -2128,7 +2142,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
-				CURRENT_PROJECT_VERSION = 0.92;
+				CURRENT_PROJECT_VERSION = 0.931;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
