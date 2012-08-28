@@ -71,7 +71,7 @@
     if (status < 300) {
         // Check the content type to see whether it's a multipart response:
         NSDictionary* headers = [(NSHTTPURLResponse*)response allHeaderFields];
-        NSString* contentType = [headers objectForKey: @"Content-Type"];
+        NSString* contentType = headers[@"Content-Type"];
         if ([contentType hasPrefix: @"text/plain"])
             contentType = nil;      // Workaround for CouchDB returning JSON docs with text/plain type
         if (![_reader setContentType: contentType]) {
@@ -132,7 +132,7 @@ static void TestMultipartDownload(NSString* urlStr) {
          CAssertNil(error);
          TDMultipartDownloader* request = result;
          Log(@"Got document: %@", request.document);
-         NSDictionary* attachments = [request.document objectForKey: @"_attachments"];
+         NSDictionary* attachments = (request.document)[@"_attachments"];
          CAssert(attachments.count >= 1);
          CAssertEq(db.attachmentStore.count, 0u);
          for (NSDictionary* attachment in attachments.allValues) {
@@ -141,7 +141,7 @@ static void TestMultipartDownload(NSString* urlStr) {
              CAssert([writer install]);
              NSData* blob = [db.attachmentStore blobForKey: writer.blobKey];
              Log(@"Found %u bytes of data for attachment %@", (unsigned)blob.length, attachment);
-             NSNumber* lengthObj = [attachment objectForKey: @"encoded_length"] ?: [attachment objectForKey: @"length"];
+             NSNumber* lengthObj = attachment[@"encoded_length"] ?: attachment[@"length"];
              CAssertEq(blob.length, [lengthObj unsignedLongLongValue]);
              CAssertEq(writer.length, blob.length);
          }
