@@ -16,7 +16,9 @@
 #import "TDDatabase+Replication.h"
 #import "TDInternal.h"
 #import "TDPuller.h"
+
 #import "MYBlockUtils.h"
+#import "CollectionUtils.h"
 
 #import "FMDatabase.h"
 #import "FMDatabaseAdditions.h"

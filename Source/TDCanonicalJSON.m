@@ -14,6 +14,7 @@
 //  and limitations under the License.
 
 #import "TDCanonicalJSON.h"
+#import "Test.h"
 #import <math.h>
 
 

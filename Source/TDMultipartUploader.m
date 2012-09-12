@@ -15,6 +15,9 @@
 
 #import "TDMultipartUploader.h"
 
+#import "Logging.h"
+#import "Test.h"
+
 
 @implementation TDMultipartUploader
 

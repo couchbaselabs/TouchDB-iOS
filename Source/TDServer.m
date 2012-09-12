@@ -20,7 +20,10 @@
 #import "TDDatabaseManager.h"
 #import "TDInternal.h"
 #import "TDURLProtocol.h"
+
 #import "MYBlockUtils.h"
+#import "Logging.h"
+#import "Test.h"
 
 
 @implementation TDServer

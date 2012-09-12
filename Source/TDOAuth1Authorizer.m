@@ -9,11 +9,13 @@
 #import "TDOAuth1Authorizer.h"
 #import "TDMisc.h"
 #import "TDBase64.h"
+
 #import "OAMutableURLRequest.h"
 #import "OAConsumer.h"
 #import "OAToken.h"
 #import "OAPlaintextSignatureProvider.h"
 
+#import "Test.h"
 
 @implementation TDOAuth1Authorizer
 

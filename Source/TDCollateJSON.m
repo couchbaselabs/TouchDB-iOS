@@ -16,7 +16,8 @@
 //  http://wiki.apache.org/couchdb/View_collation#Collation_Specification
 
 #import "TDCollateJSON.h"
-
+#import "Logging.h"
+#import "Test.h"
 
 static int cmp(int n1, int n2) {
     int diff = n1 - n2;

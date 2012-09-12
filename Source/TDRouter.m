@@ -21,8 +21,13 @@
 #import "TDMultipartWriter.h"
 #import "TDReplicatorManager.h"
 #import "TDInternal.h"
+#import "TDJSON.h"
+
 #import "ExceptionUtils.h"
 #import "MYRegexUtils.h"
+#import "CollectionUtils.h"
+#import "Logging.h"
+#import "Test.h"
 
 #ifdef GNUSTEP
 #import <GNUstepBase/NSURL+GNUstepBase.h>

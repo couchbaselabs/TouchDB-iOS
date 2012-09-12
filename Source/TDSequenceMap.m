@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDSequenceMap.h"
-
+#import "Test.h"
 
 @implementation TDSequenceMap
 

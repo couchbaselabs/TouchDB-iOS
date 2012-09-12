@@ -14,6 +14,10 @@
 //  and limitations under the License.
 
 #import "TDBody.h"
+#import "TDJSON.h"
+
+#import "Logging.h"
+#import "CollectionUtils.h"
 
 
 @implementation TDBody

@@ -10,7 +10,7 @@
 #import "TDMisc.h"
 #import "TDBase64.h"
 #import "MYURLUtils.h"
-
+#import "Test.h"
 
 @implementation TDBasicAuthorizer
 

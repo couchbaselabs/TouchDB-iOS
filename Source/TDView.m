@@ -15,6 +15,10 @@
 
 #import "TDView.h"
 #import "TDInternal.h"
+#import "TDJSON.h"
+
+#import "CollectionUtils.h"
+#import "Test.h"
 
 #import "FMDatabase.h"
 #import "FMDatabaseAdditions.h"

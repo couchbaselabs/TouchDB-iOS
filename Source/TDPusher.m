@@ -21,6 +21,9 @@
 #import "TDInternal.h"
 #import "TDMisc.h"
 
+#import "Logging.h"
+#import "CollectionUtils.h"
+#import "Test.h"
 
 static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
 
