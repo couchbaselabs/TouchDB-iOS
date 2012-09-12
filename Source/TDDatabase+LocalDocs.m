@@ -17,6 +17,9 @@
 #import <TouchDB/TDRevision.h>
 #import "TDBody.h"
 #import "TDInternal.h"
+#import "TDJSON.h"
+
+#import "CollectionUtils.h"
 
 #import "FMDatabase.h"
 

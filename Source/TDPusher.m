@@ -23,6 +23,9 @@
 #import "TDMisc.h"
 #import "TDCanonicalJSON.h"
 
+#import "Logging.h"
+#import "CollectionUtils.h"
+#import "Test.h"
 
 static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
 

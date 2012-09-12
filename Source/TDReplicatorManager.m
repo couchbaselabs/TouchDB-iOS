@@ -27,7 +27,11 @@
 #import "TDOAuth1Authorizer.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
+
 #import "MYBlockUtils.h"
+#import "Logging.h"
+#import "CollectionUtils.h"
+#import "Test.h"
 
 #if TARGET_OS_IPHONE
 #import <UIKit/UIApplication.h>

@@ -24,8 +24,11 @@
 #import "TDSequenceMap.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
-#import "ExceptionUtils.h"
+#import "TDJSON.h"
 
+#import "ExceptionUtils.h"
+#import "Logging.h"
+#import "Test.h"
 
 // Maximum number of revisions to fetch simultaneously
 #define kMaxOpenHTTPConnections 8

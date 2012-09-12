@@ -19,6 +19,8 @@
 #import "TDInternal.h"
 #import "TDMisc.h"
 
+#import "Logging.h"
+#import "CollectionUtils.h"
 
 const TDDatabaseManagerOptions kTDDatabaseManagerDefaultOptions;
 

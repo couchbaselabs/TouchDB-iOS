@@ -19,6 +19,8 @@
 #import "JSONKit.h"
 #endif
 
+#import "CollectionUtils.h"
+#import "Test.h"
 
 @implementation TDJSON
 

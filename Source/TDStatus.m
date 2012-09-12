@@ -14,7 +14,7 @@
 //  and limitations under the License.
 
 #import "TDStatus.h"
-
+#import "CollectionUtils.h"
 
 NSString* const TDHTTPErrorDomain = @"TDHTTP";
 

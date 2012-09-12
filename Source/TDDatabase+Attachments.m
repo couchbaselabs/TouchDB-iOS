@@ -35,6 +35,8 @@
 #import "TDInternal.h"
 
 #import "CollectionUtils.h"
+#import "Test.h"
+
 #import "FMDatabase.h"
 #import "FMDatabaseAdditions.h"
 #import "FMResultSet.h"

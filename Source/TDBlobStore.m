@@ -17,7 +17,7 @@
 #import "TDBase64.h"
 #import "TDMisc.h"
 #import <ctype.h>
-
+#import "Test.h"
 
 #ifdef GNUSTEP
 #define NSDataReadingMappedIfSafe NSMappedRead

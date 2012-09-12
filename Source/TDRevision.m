@@ -17,6 +17,9 @@
 #import "TDBody.h"
 #import "TDMisc.h"
 
+#import "CollectionUtils.h"
+#import "Logging.h"
+#import "Test.h"
 
 @implementation TDRevision
 

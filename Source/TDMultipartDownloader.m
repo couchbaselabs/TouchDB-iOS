@@ -18,7 +18,9 @@
 #import "TDBlobStore.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
+
 #import "CollectionUtils.h"
+#import "Logging.h"
 
 
 @implementation TDMultipartDownloader

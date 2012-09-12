@@ -20,6 +20,10 @@
 #import "TDAuthorizer.h"
 #import "TDMisc.h"
 #import "TDStatus.h"
+#import "TDJSON.h"
+
+#import "Test.h"
+
 
 
 #define kDefaultHeartbeat (5 * 60.0)

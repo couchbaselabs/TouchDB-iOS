@@ -17,6 +17,8 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 #include <arpa/inet.h>
 
+#import "CollectionUtils.h"
+
 
 static void ClientCallback(SCNetworkReachabilityRef target,
                            SCNetworkReachabilityFlags flags,

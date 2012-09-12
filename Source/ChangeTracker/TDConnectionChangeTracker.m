@@ -21,7 +21,8 @@
 #import "TDMisc.h"
 #import "TDStatus.h"
 #import "MYURLUtils.h"
-
+#import "Logging.h"
+#import "CollectionUtils.h"
 
 static SecTrustRef CopyTrustWithPolicy(SecTrustRef trust, SecPolicyRef policy);
 

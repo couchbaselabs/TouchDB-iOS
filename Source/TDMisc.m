@@ -16,7 +16,7 @@
 #import "TDMisc.h"
 
 #import "CollectionUtils.h"
-
+#import "Test.h"
 
 #ifdef GNUSTEP
 #import <openssl/sha.h>
