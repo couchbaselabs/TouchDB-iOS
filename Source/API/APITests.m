@@ -248,6 +248,18 @@ TestCase(API_DeleteDocument) {
     CAssert(doc.isDeleted);
 }
 
+TestCase(API_PurgeDocument) {
+    TDDatabase* db = createEmptyDB();
+    NSDictionary* properties = @{@"testName": @"testPurgeDocument"};
+    TDDocument* doc = createDocumentWithProperties(db, properties);
+    CAssert(doc);
+    
+    NSError* error;
+    CAssert([doc purgeDocument: &error]);
+    
+    TDDocument* redoc = [db cachedDocumentWithID:doc.documentID];
+    CAssert(!redoc);
+}
 
 TestCase(API_AllDocuments) {
     TDDatabase* db = createEmptyDB();
