@@ -163,6 +163,9 @@ NSString* const kTDDatabaseChangeNotification = @"TDDatabaseChange";
     [_docCache forgetAllResources];
 }
 
+- (void) removeDocumentFromCache: (NSString *)docID {
+    [_docCache forgetResource: [_docCache resourceWithCacheKey: docID]];
+}
 
 - (TDQuery*) queryAllDocuments {
     return [[TDQuery alloc] initWithDatabase: self view: nil];
