@@ -30,11 +30,12 @@
 #import <objc/message.h>
 #endif
 
-
+#ifndef COCOAPODS_BUILD
 #ifdef GNUSTEP
 static double TouchDBVersionNumber = 0.7;
 #else
 extern double TouchDBVersionNumber; // Defined in Xcode-generated TouchDB_vers.c
+#endif
 #endif
 
 
