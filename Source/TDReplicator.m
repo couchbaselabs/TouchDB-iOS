@@ -83,7 +83,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     if (self) {
         _thread = [NSThread currentThread];
         _db = db;
-        _remote = remote;
+        _remote = [remote copy];
         _continuous = continuous;
         Assert(push == self.isPush);
 

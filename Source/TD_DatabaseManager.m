@@ -37,8 +37,10 @@ static NSCharacterSet* kIllegalNameChars;
 
 + (void) initialize {
     if (self == [TD_DatabaseManager class]) {
-        kIllegalNameChars = [[NSCharacterSet characterSetWithCharactersInString: kLegalChars]
-                                        invertedSet];
+		// using -[NSObject copy] here because of crash, other people also do this, see
+		// http://stackoverflow.com/questions/10733698/static-objects-initialized-within-class-methods-in-arc
+        kIllegalNameChars = [[[NSCharacterSet characterSetWithCharactersInString: kLegalChars]
+                                        invertedSet] copy];
     }
 }
 
