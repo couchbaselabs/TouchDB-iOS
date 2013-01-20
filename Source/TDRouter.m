@@ -557,9 +557,9 @@ static NSArray* splitPath( NSURL* url ) {
         LogTo(TDRouter, @"%@", output);
     }
     OnFinishedBlock onFinished = _onFinished;
-    [self stopNow];
     if (onFinished)
         onFinished();
+    [self stopNow];
 }
 
 
