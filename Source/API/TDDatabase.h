@@ -65,7 +65,6 @@ typedef BOOL (^TDFilterBlock) (TDRevision* revision, NSDictionary* params);
     API calls will now instantiate and return new instances. */
 - (void) clearDocumentCache;
 
-
 /** Returns a query that matches all documents in the database. */
 - (TDQuery*) queryAllDocuments;
 

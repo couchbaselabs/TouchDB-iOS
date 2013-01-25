@@ -81,12 +81,15 @@ NSString* const kTDDocumentChangeNotification = @"TDDocumentChange";
 
 
 - (BOOL) purgeDocument: (NSError**)outError {
-    TDStatus status = [_database.tddb purgeRevisions: @{self.documentID : @"*"} result: nil];
+    TDStatus status = [_database.tddb purgeRevisions: @{self.documentID : [NSArray arrayWithObject:@"*"]} result: nil];
     if (TDStatusIsError(status)) {
         if (outError) {
             *outError = TDStatusToNSError(status, nil);
             return NO;
         }
+    }
+    else {
+        [self.database removeDocumentFromCache: self];
     }
     return YES;
 }
