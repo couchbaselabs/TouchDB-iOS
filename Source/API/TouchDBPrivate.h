@@ -36,6 +36,7 @@
             TD_Database: (TD_Database*)tddb;
 @property (readonly, nonatomic) TD_Database* tddb;
 @property (readonly, nonatomic) NSMutableSet* unsavedModelsMutable;
+- (void) removeDocumentFromCache: (TDDocument*)document;
 @end
 
 

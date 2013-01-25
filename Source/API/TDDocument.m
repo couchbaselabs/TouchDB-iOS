@@ -88,7 +88,7 @@ NSString* const kTDDocumentChangeNotification = @"TDDocumentChange";
         }
     }
     else {
-        [self.database removeDocumentFromCache: self.documentID];
+        [self.database removeDocumentFromCache: self];
     }
     return YES;
 }
