@@ -78,6 +78,7 @@
         LogTo(SyncVerbose, @"%@: has attachments, %@", self, contentType);
         _multipartReader = [[TDMultipartReader alloc] initWithContentType: contentType delegate: self];
         if (_multipartReader) {
+            _document = nil;
             _attachmentsByName = [[NSMutableDictionary alloc] init];
             _attachmentsByDigest = [[NSMutableDictionary alloc] init];
             return YES;
