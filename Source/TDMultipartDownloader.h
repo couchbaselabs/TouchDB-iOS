@@ -15,6 +15,7 @@
 @interface TDMultipartDownloader : TDRemoteRequest
 {
     @private
+    TD_Database* _db;
     TDMultipartDocumentReader* _reader;
 }
 
