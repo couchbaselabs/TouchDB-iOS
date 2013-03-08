@@ -90,9 +90,20 @@
     if (_filterName) {
         [path appendFormat: @"&filter=%@", TDEscapeURLParam(_filterName)];
         for (NSString* key in _filterParameters) {
-            id value = _filterParameters[key];
-            [path appendFormat: @"&%@=%@", TDEscapeURLParam(key), 
-                                           TDEscapeURLParam([value description])];
+            NSString* value = _filterParameters[key];
+            if (![value isKindOfClass: [NSString class]]) {
+                // It's ambiguous whether non-string filter params are allowed.
+                // If we get one, encode it as JSON:
+                NSError* error;
+                value = [TDJSON stringWithJSONObject: value options: TDJSONWritingAllowFragments
+                                               error: &error];
+                if (!value) {
+                    Warn(@"Illegal filter parameter %@ = %@", key, _filterParameters[key]);
+                    continue;
+                }
+            }
+            [path appendFormat: @"&%@=%@", TDEscapeURLParam(key),
+                                           TDEscapeURLParam(value)];
         }
     }
 
