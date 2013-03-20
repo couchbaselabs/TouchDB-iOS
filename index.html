@@ -49,6 +49,18 @@
 <li>"Good enough" performance with these CPUs and data-sets.</li>
 </ul><p>And by "<em>mobile apps</em>" I'm focusing on iOS and <a href="https://github.com/couchbaselabs/TouchDB-Android">Android</a>, although there's no reason we couldn't extend this to other platforms like Windows Phone. And it's not limited to mobile OSs -- the Objective-C implementation runs on Mac OS as well, and on Linux and other Unix-like OSs via <a href="http://www.gnustep.org/">GNUstep</a>.</p>
 
+<h2>The Future — Couchbase Lite</h2>
+
+<p>TouchDB has reached a stable 1.0 release, and we encourage you to use it in your apps, but work continues.</p>
+
+<p>On the technical front, we're merging the database engine and the public API layer (CouchCocoa), which used to be separate frameworks, into one. This eliminates a lot of intermediary code and simplifies the flow of control, meaning smaller code and faster performance. (In particular, there were several layers of marshaling to and from JSON that are now gone.)</p>
+
+<p>At the project level, it's being promoted from a 'labs' project to a real Couchbase, Inc. product. As such, the name is changing to <b><a href="https://github.com/couchbase/couchbase-lite-ios">Couchbase Lite</a></b>.</p>
+
+<p>Inevitably, the refactoring and renaming have caused some API incompatibility. Fortunately it's pretty easy to <a href="https://github.com/couchbase/couchbase-lite-ios/wiki/Upgrading-From-CouchCocoa">update</a> your code from TouchDB/CouchCocoa to Couchbase Lite.</p>
+
+<p>Couchbase Lite is still in prerelease status (as I write this in March 2013) but evolving quickly. If the New Hotness interests you more than stability, please <a href="https://github.com/couchbase/couchbase-lite-ios/">check it out</a>.</p>
+
 <h2>More Information</h2>
 
 <ul>
@@ -67,18 +79,18 @@
 <li>
 <strong>iOS</strong> -- 5.0 or higher.</li>
 <li>
-<strong>Linux, BSD, etc</strong> -- Any platform <a href="http://wiki.gnustep.org/index.php/Platform_compatibility">supported by</a> current <a href="http://www.gnustep.org/">GNUstep</a> and libobjc2.</li>
-<li>
-<strong>MS Windows</strong> -- As <a href="http://wiki.gnustep.org/index.php/Platform_compatibility">supported by</a> GNUstep using MingW.</li>
-<li>
 <strong>Android / Java</strong> -- Has its own source base and <a href="https://github.com/couchbaselabs/TouchDB-Android">repository</a>.</li>
+<li>
+Linux, BSD, MS Windows -- Could be supported with some work*</li>
 </ul>
+
+<p><small>* TouchDB was at one point running on Linux, using <a href="http://www.gnustep.org/">GNUstep</a> and libobjc2. GNUstep also supports Microsoft Windows via MinGW. The GNUstep build hasn't been kept up to date, however, so there would definitely be some work involved in getting it running again. We don't currently have plans to do this, but we'd love to support anyone who wants to dive in.</small></p>
 
 <h2>Requirements</h2>
 
 <ul>
 <li>It's written in Objective-C.</li>
-<li>Xcode 4.3+ is required to build it (Clang 3.0+, with GNUstep).</li>
+<li>Xcode 4.5+ is required to build it (or Clang 3.1+, with GNUstep).</li>
 <li>Runtime system requirements for Apple platforms are iOS 5+, or Mac OS X 10.7.2+.</li>
 </ul><h2>License</h2>
 
