@@ -823,7 +823,13 @@ static NSArray* parseJSONRevArrayQuery(NSString* queryStr) {
             if (!$equal(rev.docID, docID) || !rev.revID)
                 return kTDStatusBadID;
             NSArray* history = [TD_Database parseCouchDBRevisionHistory: body.properties];
-            return [_db forceInsert: rev revisionHistory: history source: nil];
+            TDStatus status = [_db forceInsert: rev revisionHistory: history source: nil];
+            if (!TDStatusIsError(status)) {
+                _response.bodyObject = $dict({@"ok", $true},
+                                             {@"id", rev.docID},
+                                             {@"rev", rev.revID});
+            }
+            return status;
         }
     }];
 }
