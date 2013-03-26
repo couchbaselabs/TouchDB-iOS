@@ -168,6 +168,7 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
             return;
     }
     
+    LogTo(SyncVerbose, @"%@: Queuing #%lld %@", self, rev.sequence, rev);
     [self addToInbox: rev];
 }
 

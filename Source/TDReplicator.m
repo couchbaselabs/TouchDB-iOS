@@ -164,7 +164,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 
 - (void) postProgressChanged {
-    LogTo(SyncVerbose, @"%@: postProgressChanged (%u/%u, active=%d (batch=%u, net=%u), online=%d)", 
+    LogTo(Sync, @"%@: postProgressChanged (%u/%u, active=%d (batch=%u, net=%u), online=%d)", 
           self, (unsigned)_changesProcessed, (unsigned)_changesTotal,
           _active, (unsigned)_batcher.count, _asyncTaskCount, _online);
     NSNotification* n = [NSNotification notificationWithName: TDReplicatorProgressChangedNotification
@@ -411,7 +411,6 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 - (void) addToInbox: (TD_Revision*)rev {
     Assert(_running);
-    LogTo(SyncVerbose, @"%@: Received #%lld %@", self, rev.sequence, rev);
     [_batcher queueObject: rev];
     [self updateActive];
 }
@@ -596,21 +595,21 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                   onCompletion: ^(id response, NSError* error) {
                   // Got the response:
                   if (error && error.code != kTDStatusNotFound) {
+                      LogTo(Sync, @"%@: Error fetching last sequence: %@", self, error.localizedDescription);
                       self.error = error;
                   } else {
                       if (error.code == kTDStatusNotFound)
                           [self maybeCreateRemoteDB];
                       response = $castIf(NSDictionary, response);
                       self.remoteCheckpoint = response;
-                      NSString* remoteLastSequence = $castIf(NSString,
-                                                        response[@"lastSequence"]);
+                      NSString* remoteLastSequence = response[@"lastSequence"];
 
                       if ($equal(remoteLastSequence, localLastSequence)) {
                           _lastSequence = localLastSequence;
                           LogTo(Sync, @"%@: Replicating from lastSequence=%@", self, _lastSequence);
                       } else {
-                          LogTo(Sync, @"%@: lastSequence mismatch: I had %@, remote had %@",
-                                self, localLastSequence, remoteLastSequence);
+                          LogTo(Sync, @"%@: lastSequence mismatch: I had %@, remote had %@ (response = %@)",
+                                self, localLastSequence, remoteLastSequence, response);
                       }
                       [self beginReplicating];
                   }
@@ -641,7 +640,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     NSMutableDictionary* body = [_remoteCheckpoint mutableCopy];
     if (!body)
         body = $mdict();
-    [body setValue: _lastSequence forKey: @"lastSequence"];
+    [body setValue: _lastSequence.description forKey: @"lastSequence"]; // always save as a string
     
     _savingCheckpoint = YES;
     NSString* checkpointID = self.remoteCheckpointDocID;
