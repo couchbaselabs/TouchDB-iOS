@@ -118,7 +118,7 @@ NSString* TDEscapeID( NSString* docOrRevID ) {
 #else
     CFStringRef escaped = CFURLCreateStringByAddingPercentEscapes(NULL,
                                                                   (CFStringRef)docOrRevID,
-                                                                  NULL, (CFStringRef)@"&/",
+                                                                  NULL, (CFStringRef)@"?&/",
                                                                   kCFStringEncodingUTF8);
     #ifdef __OBJC_GC__
     return NSMakeCollectable(escaped);
@@ -288,4 +288,12 @@ TestCase(TDQuoteString) {
     CAssertEqual(TDUnquoteString(@"\"\\foo\""), @"foo");
     CAssertEqual(TDUnquoteString(@"\"\\\\foo\""), @"\\foo");
     CAssertEqual(TDUnquoteString(@"\"foo\\\""), nil);
+}
+
+TestCase(TDEscapeID) {
+    CAssertEqual(TDEscapeID(@"foobar"), @"foobar");
+    CAssertEqual(TDEscapeID(@"<script>alert('ARE YOU MY DADDY?')</script>"),
+                            @"%3Cscript%3Ealert('ARE%20YOU%20MY%20DADDY%3F')%3C%2Fscript%3E");
+    CAssertEqual(TDEscapeID(@"foo/bar"), @"foo%2Fbar");
+    CAssertEqual(TDEscapeID(@"foo&bar"), @"foo%26bar");
 }
