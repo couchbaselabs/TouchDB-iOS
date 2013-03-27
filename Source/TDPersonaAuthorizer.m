@@ -1,18 +1,18 @@
 //
-//  TDBrowserIDAuthorizer.m
+//  TDPersonaAuthorizer.m
 //  TouchDB
 //
 //  Created by Jens Alfke on 1/9/13.
 //
 //
 
-#import "TDBrowserIDAuthorizer.h"
+#import "TDPersonaAuthorizer.h"
 #import "TDBase64.h"
 
 static NSMutableDictionary* sAssertions;
 
 
-@implementation TDBrowserIDAuthorizer
+@implementation TDPersonaAuthorizer
 
 
 static NSDictionary* decodeComponent(NSArray* components, NSUInteger index) {
@@ -126,7 +126,7 @@ static bool parseAssertion(NSString* assertion,
 
 
 - (NSString*) loginPathForSite:(NSURL *)site {
-    return [site.path stringByAppendingPathComponent: @"_browserid"];
+    return [site.path stringByAppendingPathComponent: @"_persona"];
 }
 
 
@@ -140,7 +140,7 @@ static bool parseAssertion(NSString* assertion,
 
 
 
-TestCase(TEBrowserIDAuthorizer) {
+TestCase(TEPersonaAuthorizer) {
     NSString* email, *origin;
     NSDate* exp;
     CAssert(!parseAssertion(@"", &email, &origin, &exp));
@@ -154,13 +154,13 @@ TestCase(TEBrowserIDAuthorizer) {
 
     // Register and retrieve the sample assertion:
     NSURL* originURL = [NSURL URLWithString: origin];
-    CAssertEqual([TDBrowserIDAuthorizer registerAssertion: sampleAssertion], email);
-    NSString* gotAssertion = [TDBrowserIDAuthorizer takeAssertionForEmailAddress: email
+    CAssertEqual([TDPersonaAuthorizer registerAssertion: sampleAssertion], email);
+    NSString* gotAssertion = [TDPersonaAuthorizer takeAssertionForEmailAddress: email
                                                                             site: originURL];
     CAssertEqual(gotAssertion, sampleAssertion);
     
     // -assertionForSite: should return nil because the assertion has expired by now:
-    TDBrowserIDAuthorizer* auth = [[TDBrowserIDAuthorizer alloc] initWithEmailAddress: email];
+    TDPersonaAuthorizer* auth = [[TDPersonaAuthorizer alloc] initWithEmailAddress: email];
     CAssertEqual(auth.emailAddress, email);
     CAssertEqual([auth assertionForSite: originURL], nil);
 }

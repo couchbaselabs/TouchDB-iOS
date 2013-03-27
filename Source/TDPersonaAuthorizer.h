@@ -1,5 +1,5 @@
 //
-//  TDBrowserIDAuthorizer.h
+//  TDPersonaAuthorizer.h
 //  TouchDB
 //
 //  Created by Jens Alfke on 1/9/13.
@@ -8,7 +8,8 @@
 
 #import "TDAuthorizer.h"
 
-@interface TDBrowserIDAuthorizer: NSObject <TDAuthorizer>
+/** Authorizer for the Persona decentralized-identity system. See http://persona.org */
+@interface TDPersonaAuthorizer: NSObject <TDAuthorizer>
 
 + (NSURL*) originForSite: (NSURL*)url;
 

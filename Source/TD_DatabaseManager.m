@@ -16,7 +16,7 @@
 #import "TD_DatabaseManager.h"
 #import "TD_Database.h"
 #import "TDOAuth1Authorizer.h"
-#import "TDBrowserIDAuthorizer.h"
+#import "TDPersonaAuthorizer.h"
 #import "TDPusher.h"
 #import "TDReplicatorManager.h"
 #import "TDInternal.h"
@@ -270,10 +270,10 @@ static NSDictionary* parseSourceOrTarget(NSDictionary* properties, NSString* key
                                                                       tokenSecret: tokenSec
                                                                   signatureMethod: sigMethod];
             } else {
-                NSDictionary* browserid = $castIf(NSDictionary, auth[@"browserid"]);
-                if (browserid) {
-                    NSString* email = $castIf(NSString, browserid[@"email"]);
-                    *outAuthorizer = [[TDBrowserIDAuthorizer alloc] initWithEmailAddress: email];
+                NSDictionary* persona = $castIf(NSDictionary, auth[@"persona"]);
+                if (persona) {
+                    NSString* email = $castIf(NSString, persona[@"email"]);
+                    *outAuthorizer = [[TDPersonaAuthorizer alloc] initWithEmailAddress: email];
                 }
             }
             if (!*outAuthorizer)
