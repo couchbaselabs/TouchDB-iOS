@@ -49,3 +49,4 @@ static inline bool TDStatusIsError(TDStatus status) {return status >= 300;}
 int TDStatusToHTTPStatus( TDStatus status, NSString** outMessage );
 
 NSError* TDStatusToNSError( TDStatus status, NSURL* url );
+NSError* TDStatusToNSErrorWithInfo( TDStatus status, NSURL* url, NSDictionary* extraInfo );

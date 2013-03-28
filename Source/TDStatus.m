@@ -61,11 +61,18 @@ int TDStatusToHTTPStatus( TDStatus status, NSString** outMessage ) {
 }
 
 
-NSError* TDStatusToNSError( TDStatus status, NSURL* url ) {
+NSError* TDStatusToNSErrorWithInfo( TDStatus status, NSURL* url, NSDictionary* extraInfo ) {
     NSString* reason;
     status = TDStatusToHTTPStatus(status, &reason);
-    NSDictionary* info = $dict({NSURLErrorKey, url},
+    NSMutableDictionary* info = $mdict({NSURLErrorKey, url},
                                {NSLocalizedFailureReasonErrorKey, reason},
                                {NSLocalizedDescriptionKey, $sprintf(@"%i %@", status, reason)});
-    return [NSError errorWithDomain: TDHTTPErrorDomain code: status userInfo: info];
+    if (extraInfo)
+        [info addEntriesFromDictionary: extraInfo];
+    return [NSError errorWithDomain: TDHTTPErrorDomain code: status userInfo: [info copy]];
+}
+
+
+NSError* TDStatusToNSError( TDStatus status, NSURL* url ) {
+    return TDStatusToNSErrorWithInfo(status, url, nil);
 }
