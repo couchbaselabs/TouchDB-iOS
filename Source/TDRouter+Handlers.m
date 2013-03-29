@@ -278,11 +278,8 @@
                     return status;  // all_or_nothing backs out if there's any error
                 } else {
                     NSString* error = nil;
-                    if (status == kTDStatusForbidden)
-                        error = @"validation failed";
-                    else
-                        TDStatusToHTTPStatus(status, &error);
-                    result = $dict({@"id", docID}, {@"error", error});
+                    status = TDStatusToHTTPStatus(status, &error);
+                    result = $dict({@"id", docID}, {@"error", error}, {@"status", @(status)});
                 }
                 if (result)
                     [results addObject: result];

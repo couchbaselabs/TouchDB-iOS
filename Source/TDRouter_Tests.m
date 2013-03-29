@@ -119,7 +119,7 @@ TestCase(TDRouter_Server) {
     NSDictionary* response = Send(server, @"POST", @"/", kTDStatusBadRequest, nil);
     
     CAssertEqual(response[@"status"], @(400));
-    CAssertEqual(response[@"error"], @"bad request");
+    CAssertEqual(response[@"error"], @"bad_request");
     
     NSDictionary* session = Send(server, @"GET", @"/_session", kTDStatusOK, nil);
     CAssert(session[@"ok"]);
