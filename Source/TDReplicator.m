@@ -227,8 +227,11 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                 ];
 
     // If client didn't set an authorizer, use basic auth if credential is available:
-    if (!_authorizer)
+    if (!_authorizer) {
         _authorizer = [[TDBasicAuthorizer alloc] initWithURL: _remote];
+        if (_authorizer)
+            LogTo(SyncVerbose, @"%@: Found credential, using %@", self, _authorizer);
+    }
 
     self.running = YES;
     _startTime = CFAbsoluteTimeGetCurrent();
@@ -521,6 +524,11 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                                          onCompletion: ^(id result, NSError* error) {
         TDReplicator *strongSelf = weakSelf;
         [strongSelf removeRemoteRequest: req];
+        id<TDAuthorizer> auth = req.authorizer;
+        if (auth && auth != _authorizer && error.code != 401) {
+            LogTo(SyncVerbose, @"%@: Updated to %@", self, auth);
+            _authorizer = auth;
+        }
         onCompletion(result, error);
     }];
     req.authorizer = _authorizer;

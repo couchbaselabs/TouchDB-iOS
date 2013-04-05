@@ -55,7 +55,7 @@ static NSString* GetServerPath() {
 
 static bool doReplicate( TD_Server* server, const char* replArg,
                         BOOL pull, BOOL createTarget, BOOL continuous,
-                        const char *user, const char *password)
+                        const char *user, const char *password, const char *realm)
 {
     NSURL* remote = CFBridgingRelease(CFURLCreateWithBytes(NULL, (const UInt8*)replArg,
                                                            strlen(replArg),
@@ -73,7 +73,8 @@ static bool doReplicate( TD_Server* server, const char* replArg,
     if (user && password) {
         NSString* userStr = @(user);
         NSString* passStr = @(password);
-        Log(@"Setting credentials for user '%@'", userStr);
+        NSString* realmStr = realm ? @(realm) : nil;
+        Log(@"Setting session credentials for user '%@' in realm %@", userStr, realmStr);
         NSURLCredential* cred;
         cred = [NSURLCredential credentialWithUser: userStr
                                           password: passStr
@@ -85,7 +86,7 @@ static bool doReplicate( TD_Server* server, const char* replArg,
         space = [[NSURLProtectionSpace alloc] initWithHost: remote.host
                                                       port: port
                                                   protocol: remote.scheme
-                                                     realm: nil
+                                                     realm: realmStr
                                       authenticationMethod: NSURLAuthenticationMethodDefault];
         [[NSURLCredentialStorage sharedCredentialStorage] setDefaultCredential: cred
                                                             forProtectionSpace: space];
@@ -135,7 +136,7 @@ int main (int argc, const char * argv[])
 #endif
 
         TD_DatabaseManagerOptions options = kTD_DatabaseManagerDefaultOptions;
-        const char* replArg = NULL, *user = NULL, *password = NULL;
+        const char* replArg = NULL, *user = NULL, *password = NULL, *realm = NULL;
         BOOL auth = NO, pull = NO, createTarget = NO, continuous = NO;
         
         for (int i = 1; i < argc; ++i) {
@@ -156,6 +157,8 @@ int main (int argc, const char * argv[])
                 user = argv[++i];
             } else if (strcmp(argv[i], "--password") == 0) {
                 password = argv[++i];
+            } else if (strcmp(argv[i], "--realm") == 0) {
+                realm = argv[++i];
             }
         }
 
@@ -188,7 +191,7 @@ int main (int argc, const char * argv[])
         [listener start];
         
         if (replArg) {
-            if (!doReplicate(server, replArg, pull, createTarget, continuous, user, password))
+            if (!doReplicate(server, replArg, pull, createTarget, continuous, user, password, realm))
                 return 1;
         } else {
             Log(@"TouchServ %@ is listening%@ on port %d ... relax!",
