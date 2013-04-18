@@ -364,12 +364,12 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     // Under ARC, using variable dl directly in the block given as an argument to initWithURL:...
     // results in compiler error (could be undefined variable)
     __weak TDPuller *weakSelf = self;
-    __block TDMultipartDownloader *dl = nil;
+    TDMultipartDownloader *dl;
     dl = [[TDMultipartDownloader alloc] initWithURL: TDAppendToURL(_remote, path)
                                            database: _db
                                      requestHeaders: self.requestHeaders
                                        onCompletion:
-        ^(TDMultipartDownloader* download, NSError *error) {
+        ^(TDMultipartDownloader* dl, NSError *error) {
             __strong TDPuller *strongSelf = weakSelf;
             // OK, now we've got the response revision:
             if (error) {
@@ -377,7 +377,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
                 [strongSelf revisionFailed];
                 strongSelf.changesProcessed++;
             } else {
-                TD_Revision* gotRev = [TD_Revision revisionWithProperties: download.document];
+                TD_Revision* gotRev = [TD_Revision revisionWithProperties: dl.document];
                 gotRev.sequence = rev.sequence;
                 // Add to batcher ... eventually it will be fed to -insertRevisions:.
                 [_downloadsToInsert queueObject: gotRev];

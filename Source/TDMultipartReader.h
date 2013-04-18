@@ -14,7 +14,7 @@
 @interface TDMultipartReader : NSObject
 {
     @private
-    id<TDMultipartReaderDelegate> _delegate;
+    __weak id<TDMultipartReaderDelegate> _delegate;
     NSData* _boundary;
     NSMutableData* _buffer;
     NSMutableDictionary* _headers;

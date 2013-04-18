@@ -397,11 +397,11 @@ static TDStatus statusFromBulkDocsResponseItem(NSDictionary* item) {
     [self asyncTaskStarted];
 
     NSString* path = $sprintf(@"%@?new_edits=false", TDEscapeID(rev.docID));
-    __block TDMultipartUploader* uploader = [[TDMultipartUploader alloc]
+    TDMultipartUploader* uploader = [[TDMultipartUploader alloc]
                                   initWithURL: TDAppendToURL(_remote, path)
                                      streamer: bodyStream
                                requestHeaders: self.requestHeaders
-                                 onCompletion: ^(id response, NSError *error) {
+                                 onCompletion: ^(TDMultipartUploader* uploader, NSError *error) {
                   if (error) {
                       if ($equal(error.domain, TDHTTPErrorDomain)
                                 && error.code == kTDStatusUnsupportedType) {
@@ -413,7 +413,7 @@ static TDStatus statusFromBulkDocsResponseItem(NSDictionary* item) {
                           [self revisionFailed];
                       }
                   } else {
-                      LogTo(SyncVerbose, @"%@: Sent %@, response=%@", self, rev, response);
+                      LogTo(SyncVerbose, @"%@: Sent multipart %@", self, rev);
                       [self removePending: rev];
                   }
                   self.changesProcessed++;
