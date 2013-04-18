@@ -228,6 +228,7 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
         } else if (results.count) {
             // Go through the list of local changes again, selecting the ones the destination server
             // said were missing and mapping them to a JSON dictionary in the form _bulk_docs wants:
+            TD_RevisionList* revsToSend = [[TD_RevisionList alloc] init];
             NSArray* docsToSend = [changes.allRevisions my_map: ^id(TD_Revision* rev) {
                 NSDictionary* properties;
                 @autoreleasepool {
@@ -265,12 +266,13 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
                     }
                 }
                 Assert(properties[@"_id"]);
+                [revsToSend addRev: rev];
                 return properties;
             }];
             
             // Post the revisions to the destination:
-            [self uploadBulkDocs: docsToSend changes: changes];
-            
+            [self uploadBulkDocs: docsToSend changes: revsToSend];
+
         } else {
             // None of the revisions are new to the remote
             for (TD_Revision* rev in changes.allRevisions)
@@ -310,7 +312,7 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
                               // 403/Forbidden means validation failed; don't treat it as an error
                               // because I did my job in sending the revision. Other statuses are
                               // actual replication errors.
-                              if (status != kTDStatusForbidden) {
+                              if (status != kTDStatusForbidden && status != kTDStatusUnauthorized) {
                                   NSString* docID = item[@"id"];
                                   [failedIDs addObject: docID];
                                   NSURL* url = docID ? [_remote URLByAppendingPathComponent: docID]
