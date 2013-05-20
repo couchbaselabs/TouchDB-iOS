@@ -176,6 +176,56 @@ TestCase(TDPuller) {
     [server close];
 }
 
+TestCase(TDPuller_DocIDs) {
+    RequireTestCase(TDPusher);
+    
+    TD_DatabaseManager* server = [TD_DatabaseManager createEmptyAtTemporaryPath: @"TDPuller_DocIDs_Test"];
+    TD_Database* db = [server databaseNamed: @"db"];
+    [db open];
+    
+    // Start a named document pull replication.
+    NSURL* remote = [NSURL URLWithString: kRemoteDBURLStr];
+    TDReplicator* repl = [[TDReplicator alloc] initWithDB: db remote: remote
+                                                     push: NO continuous: NO];
+    repl.docIDs = @[@"doc1"];
+    repl.authorizer = authorizer();
+    [repl start];
+    
+    // Let the replicator run.
+    CAssert(repl.running);
+    Log(@"Waiting for replicator to finish...");
+    while (repl.running || repl.savingCheckpoint) {
+        if (![[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
+                                      beforeDate: [NSDate dateWithTimeIntervalSinceNow: 0.5]])
+            break;
+    }
+    CAssert(!repl.running);
+    CAssert(!repl.savingCheckpoint);
+    CAssertNil(repl.error);
+    Log(@"...replicator finished. lastSequence=%@", repl.lastSequence);
+    id lastSeq = repl.lastSequence;
+    
+    CAssertEqual(lastSeq, @1);
+    
+    NSLog(@"GOT DOCS: %@", [[db getAllDocs:nil] description]);
+    
+    CAssertEq(db.documentCount, 1u);
+    CAssertEq(db.lastSequence, 2);
+    
+    // Replicate again; should complete but add no revisions:
+    Log(@"Second replication, should get no more revs:");
+    replic8(db, kRemoteDBURLStr, NO, nil);
+    CAssertEq(db.lastSequence, 3);
+    
+    TD_Revision* doc = [db getDocumentWithID: @"doc1" revisionID: nil];
+    CAssert(doc);
+    CAssert([doc.revID hasPrefix: @"2-"]);
+    CAssertEqual(doc[@"foo"], @1);
+    
+    [db close];
+    [server close];
+}
+
 
 TestCase(TDPuller_FromCouchApp) {
     /** This test case requires that there be an empty CouchApp installed on a local CouchDB server, in a database named "couchapp_helloworld". To keep the test from breaking for most people, I've disabled it unless you're me :) If you want to run this test, just delete the lines below. */
