@@ -24,6 +24,7 @@ typedef void (^OnFinishedBlock)();
     NSURLRequest* _request;
     NSMutableArray* _path;
     NSDictionary* _queries;
+    NSMutableArray* _queryRetainer;
     TDResponse* _response;
     TD_Database* _db;
     BOOL _local;
