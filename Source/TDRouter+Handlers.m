@@ -421,6 +421,8 @@
 
 
 - (void) dbChanged: (NSNotification*)n {
+    id retainSelf = self;
+    
     NSDictionary* userInfo = n.userInfo;
     TD_Revision* rev = userInfo[@"rev"];
     TD_Revision* winningRev = userInfo[@"winner"];
@@ -453,6 +455,8 @@
         Log(@"TDRouter: Sending continous change chunk");
         [self sendContinuousChange: rev];
     }
+    
+    retainSelf = nil;
 }
 
 
