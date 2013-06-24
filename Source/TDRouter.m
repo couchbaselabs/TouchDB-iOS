@@ -586,13 +586,11 @@ static NSArray* splitPath( NSURL* url ) {
 
 
 - (void) stopNow {
-    @synchronized(self) {
-        _running = NO;
-        self.onResponseReady = nil;
-        self.onDataAvailable = nil;
-        self.onFinished = nil;
-        [[NSNotificationCenter defaultCenter] removeObserver: self];
-    }
+    _running = NO;
+    self.onResponseReady = nil;
+    self.onDataAvailable = nil;
+    self.onFinished = nil;
+    [[NSNotificationCenter defaultCenter] removeObserver: self];
 }
 
 
