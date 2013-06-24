@@ -197,15 +197,9 @@
 
 - (void) cleanUp {
     // Break cycles:
-    
-    @synchronized(_router) {
-        // should call [_router stopNow] instead?
-        _router.onResponseReady = nil;
-        _router.onDataAvailable = nil;
-        _router.onFinished = nil;
-        [[NSNotificationCenter defaultCenter] removeObserver:_router];
-    }
-    
+    _router.onResponseReady = nil;
+    _router.onDataAvailable = nil;
+    _router.onFinished = nil;
     if (!_finished) {
         _finished = true;
     }
