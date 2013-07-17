@@ -41,6 +41,7 @@ typedef void (^TDRemoteRequestCompletionBlock)(id result, NSError* error);
        requestHeaders: (NSDictionary *)requestHeaders
          onCompletion: (TDRemoteRequestCompletionBlock)onCompletion;
 
+@property NSTimeInterval timeoutInterval;
 @property (strong, nonatomic) id<TDAuthorizer>authorizer;
 
 /** In some cases a kTDStatusNotFound Not Found is an expected condition and shouldn't be logged; call this to suppress that log message. */

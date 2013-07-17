@@ -65,6 +65,15 @@
 }
 
 
+- (NSTimeInterval) timeoutInterval {
+    return _request.timeoutInterval;
+}
+
+- (void) setTimeoutInterval:(NSTimeInterval)timeout {
+    _request.timeoutInterval = timeout;
+}
+
+
 - (id<TDAuthorizer>) authorizer {
     return _authorizer;
 }

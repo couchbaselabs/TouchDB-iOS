@@ -39,6 +39,8 @@
 
 #define kRetryDelay 60.0
 
+#define kDefaultRequestTimeout 60.0
+
 
 NSString* TDReplicatorProgressChangedNotification = @"TDReplicatorProgressChanged";
 NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
@@ -500,6 +502,15 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 #pragma mark - HTTP REQUESTS:
 
 
+- (NSTimeInterval) requestTimeout {
+    id timeoutObj = _options[@"connection_timeout"];    // CouchDB specifies this name
+    if (!timeoutObj)
+        return kDefaultRequestTimeout;
+    NSTimeInterval timeout = [timeoutObj doubleValue] / 1000.0;
+    return timeout > 0.0 ? timeout : kDefaultRequestTimeout;
+}
+
+
 - (TDRemoteJSONRequest*) sendAsyncRequest: (NSString*)method
                                      path: (NSString*)path
                                      body: (id)body
@@ -531,6 +542,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
         }
         onCompletion(result, error);
     }];
+    req.timeoutInterval = self.requestTimeout;
     req.authorizer = _authorizer;
     [self addRemoteRequest: req];
     [req start];
