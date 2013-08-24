@@ -29,10 +29,6 @@
 #import "MYBlockUtils.h"
 #import "MYURLUtils.h"
 
-#if TARGET_OS_IPHONE
-#import <UIKit/UIApplication.h>
-#endif
-
 
 #define kProcessDelay 0.5
 #define kInboxCapacity 100
@@ -45,6 +41,13 @@
 NSString* TDReplicatorProgressChangedNotification = @"TDReplicatorProgressChanged";
 NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
+#if TARGET_OS_IPHONE
+@interface TDReplicator (Backgrounding)
+- (void) setupBackgrounding;
+- (void) endBackgrounding;
+- (void) okToEndBackgrounding;
+@end
+#endif
 
 @interface TDReplicator ()
 @property (readwrite, nonatomic) BOOL running, active;
@@ -239,10 +242,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     _startTime = CFAbsoluteTimeGetCurrent();
     
 #if TARGET_OS_IPHONE
-    // Register for foreground/background transition notifications, on iOS:
-    [[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(appBackgrounding:)
-                                                 name: UIApplicationDidEnterBackgroundNotification
-                                               object: nil];
+    [self setupBackgrounding];
 #endif
     
     _online = NO;
@@ -275,12 +275,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     LogTo(Sync, @"%@ STOPPING...", self);
     [_batcher flushAll];
     _continuous = NO;
-#if TARGET_OS_IPHONE
-    // Unregister for background transition notifications, on iOS:
-    [[NSNotificationCenter defaultCenter] removeObserver: self
-                                                 name: UIApplicationDidEnterBackgroundNotification
-                                               object: nil];
-#endif
+
     [self stopRemoteRequests];
     [NSObject cancelPreviousPerformRequestsWithTarget: self
                                              selector: @selector(retryIfReady) object: nil];
@@ -293,6 +288,11 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     LogTo(Sync, @"%@ STOPPED", self);
     Log(@"Replication: %@ took %.3f sec; error=%@",
         self, CFAbsoluteTimeGetCurrent()-_startTime, _error);
+    
+    #if TARGET_OS_IPHONE
+            [self endBackgrounding];
+    #endif
+    
     self.running = NO;
     self.changesProcessed = self.changesTotal = 0;
     [[NSNotificationCenter defaultCenter]
@@ -365,17 +365,6 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 }
 
 
-#if TARGET_OS_IPHONE
-- (void) appBackgrounding: (NSNotification*)n {
-    // Danger: This is called on the main thread!
-    MYOnThread(_thread, ^{
-        LogTo(Sync, @"%@: App going into background", self);
-        [self stop];
-    });
-}
-#endif
-
-
 - (void) updateActive {
     BOOL active = _batcher.count > 0 || _asyncTaskCount > 0;
     if (active != _active) {
@@ -383,6 +372,10 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
         [self postProgressChanged];
         if (!_active) {
             // Replicator is now idle. If it's not continuous, stop.
+            #if TARGET_OS_IPHONE
+                            [self okToEndBackgrounding];
+            #endif
+            
             if (!_continuous) {
                 [self stopped];
             } else if (_revisionsFailed > 0) {

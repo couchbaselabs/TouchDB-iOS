@@ -48,6 +48,9 @@ extern NSString* TDReplicatorStoppedNotification;
     NSDictionary* _requestHeaders;
     @private
     TDReachability* _host;
+    #if TARGET_OS_IPHONE
+            NSUInteger /*UIBackgroundTaskIdentifier*/ _bgTask;
+    #endif
 }
 
 + (NSString *)progressChangedNotification;
