@@ -4,6 +4,22 @@ by Jens Alfke (jens@couchbase.com)
 with contributions from Alexander Edge, Chris Kau, David Venable, Derek Clarkson, Fabien Franzen, fcandalija, J Chris Anderson, Marty Schoch, Mike Lamb, Paul Mietz Egli, Robin Lu  
 and technical advice from Damien Katz and Filipe Manana
 
+### IMPORTANT-LOOKING NOTICE ###
+
+>TouchDB is the legacy 1.0 version of the project now named [Couchbase Lite](https://github.com/couchbase/couchbase-lite-ios). Due to the renaming and architectural changes, Couchbase Lite lives in a separate repository (although it inherits from TouchDB.) **We don't recommend using TouchDB for any new development:** Couchbase Lite is faster, easier to use, has a better API, has a lot of new features including full-text search and geo-queries, and is actively being developed and supported.
+
+>**Please proceed to [Couchbase Lite](https://github.com/couchbase/couchbase-lite-ios)**. Thanks! --Jens & the Couchbase Mobile team
+
+### END OF IMPORTANT-LOOKING NOTICE ###
+
+.
+
+.
+
+.
+
+.
+
 **TouchDB** is a lightweight [Apache CouchDB][1]-compatible database engine suitable for embedding into mobile or desktop apps. Think of it this way: If CouchDB is MySQL, then TouchDB is SQLite.
 
 By "_CouchDB-compatible_" I mean that it can replicate with CouchDB, and that its data model and high-level design are "Couch-like" enough to make it familiar to CouchDB/Couchbase developers. Its REST API is nearly identical, though it doesn't support a few CouchDB features, like user accounts, that aren't useful in mobile apps. Its implementation is _not_ based on CouchDB's (it's not even written in Erlang.) It _does_ support replication to and from CouchDB.
