@@ -63,14 +63,9 @@ And by "_mobile apps_" we're focusing on iOS and [Android][11], although there's
 
 ## Development Status ##
 
-TouchDB 1.0.1 was released on January 15, 2013.
+TouchDB 1.0.1 was released on January 15, 2013; there have been various bug fixes since then. Use the latest revision on the default 'master' branch.
 
-In general, the "stable" branch represents the latest stable release, while the "master" branch has the latest commits and may not be solid. Any other branches are probably experimental.
-
-## Downloading TouchDB ##
-
-* [Latest stable build][20].
-* [Latest revisions][19] (built hourly after any commits. Each archive is timestamped. May not be stable; use at your own risk.)
+TouchDB has not been actively developed since Spring 2013. It's not recommended for new projects.
 
 ## Building TouchDB ##
 
