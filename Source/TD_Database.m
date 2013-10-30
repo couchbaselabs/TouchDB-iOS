@@ -125,6 +125,8 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
     LogTo(TD_Database, @"Open %@ (flags=%X)", _path, flags);
     if (![_fmdb openWithFlags: flags])
         return NO;
+  
+    _fmdb.shouldCacheStatements = YES;      // Saves the time to recompile SQL statements
 
     // Register CouchDB-compatible JSON collation functions:
     sqlite3_create_collation(_fmdb.sqliteHandle, "JSON", SQLITE_UTF8,
