@@ -704,8 +704,12 @@ NSString* const TD_DatabaseChangeNotification = @"TD_DatabaseChange";
                     // Now delete the sequences to be purged.
                     NSString* sql = $sprintf(@"DELETE FROM revs WHERE sequence in (%@)",
                                            [seqsToPurge.allObjects componentsJoinedByString: @","]);
-                    if (![_fmdb executeUpdate: sql])
+                    _fmdb.shouldCacheStatements = NO;
+                    if (![_fmdb executeUpdate: sql]) {
+                        _fmdb.shouldCacheStatements = YES;
                         return kTDStatusDBError;
+                    }
+                    _fmdb.shouldCacheStatements = YES;
                     if ((NSUInteger)_fmdb.changes != seqsToPurge.count)
                         Warn(@"purgeRevisions: Only %i sequences deleted of (%@)",
                              _fmdb.changes, [seqsToPurge.allObjects componentsJoinedByString:@","]);

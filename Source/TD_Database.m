@@ -126,8 +126,6 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
     if (![_fmdb openWithFlags: flags])
         return NO;
   
-    _fmdb.shouldCacheStatements = YES;      // Saves the time to recompile SQL statements
-
     // Register CouchDB-compatible JSON collation functions:
     sqlite3_create_collation(_fmdb.sqliteHandle, "JSON", SQLITE_UTF8,
                              kTDCollateJSON_Unicode, TDCollateJSON);
@@ -285,8 +283,9 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
         [_fmdb close];
         return NO;
     }
-
+  
     _open = YES;
+    _fmdb.shouldCacheStatements = YES;      // Saves the time to recompile SQL statements
     return YES;
 }
 
@@ -690,7 +689,10 @@ static NSArray* revIDsFromResultSet(FMResultSet* r) {
                               "WHERE doc_id=? and revid in (%@) and revid <= ? "
                               "ORDER BY revid DESC LIMIT 1", 
                               [TD_Database joinQuotedStrings: revIDs]);
-    return [_fmdb stringForQuery: sql, @(docNumericID), rev.revID];
+    _fmdb.shouldCacheStatements = NO;
+    NSString* ancestor = [_fmdb stringForQuery: sql, @(docNumericID), rev.revID];
+    _fmdb.shouldCacheStatements = YES;
+    return ancestor;
 }
     
 
