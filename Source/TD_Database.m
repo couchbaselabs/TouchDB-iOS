@@ -125,7 +125,7 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
     LogTo(TD_Database, @"Open %@ (flags=%X)", _path, flags);
     if (![_fmdb openWithFlags: flags])
         return NO;
-
+  
     // Register CouchDB-compatible JSON collation functions:
     sqlite3_create_collation(_fmdb.sqliteHandle, "JSON", SQLITE_UTF8,
                              kTDCollateJSON_Unicode, TDCollateJSON);
@@ -283,8 +283,9 @@ static BOOL removeItemIfExists(NSString* path, NSError** outError) {
         [_fmdb close];
         return NO;
     }
-
+  
     _open = YES;
+    _fmdb.shouldCacheStatements = YES;      // Saves the time to recompile SQL statements
     return YES;
 }
 
@@ -688,7 +689,10 @@ static NSArray* revIDsFromResultSet(FMResultSet* r) {
                               "WHERE doc_id=? and revid in (%@) and revid <= ? "
                               "ORDER BY revid DESC LIMIT 1", 
                               [TD_Database joinQuotedStrings: revIDs]);
-    return [_fmdb stringForQuery: sql, @(docNumericID), rev.revID];
+    _fmdb.shouldCacheStatements = NO;
+    NSString* ancestor = [_fmdb stringForQuery: sql, @(docNumericID), rev.revID];
+    _fmdb.shouldCacheStatements = YES;
+    return ancestor;
 }
     
 
@@ -961,14 +965,17 @@ const TDChangesOptions kDefaultTDChangesOptions = {UINT_MAX, 0, NO, NO, YES};
         update_seq = self.lastSequence;     // TODO: needs to be atomic with the following SELECT
     
     // Generate the SELECT statement, based on the options:
+    BOOL cacheQuery = YES;
     NSMutableString* sql = [@"SELECT revs.doc_id, docid, revid" mutableCopy];
     if (options->includeDocs)
         [sql appendString: @", json, sequence"];
     if (options->includeDeletedDocs)
         [sql appendString: @", deleted"];
     [sql appendString: @" FROM revs, docs WHERE"];
-    if (docIDs)
+    if (docIDs) {
         [sql appendFormat: @" docid IN (%@) AND", [TD_Database joinQuotedStrings: docIDs]];
+        cacheQuery = NO; // we've put hardcoded key strings in the query
+    }
     [sql appendString: @" docs.doc_id = revs.doc_id AND current=1"];
     if (!options->includeDeletedDocs)
         [sql appendString: @" AND deleted=0"];
@@ -1000,7 +1007,12 @@ const TDChangesOptions kDefaultTDChangesOptions = {UINT_MAX, 0, NO, NO, YES};
     [args addObject: @(options->skip)];
     
     // Now run the database query:
+    // Now run the database query:
+    if (!cacheQuery)
+      _fmdb.shouldCacheStatements = NO;
     FMResultSet* r = [_fmdb executeQuery: sql withArgumentsInArray: args];
+    if (!cacheQuery)
+      _fmdb.shouldCacheStatements = YES;
     if (!r)
         return nil;
     
